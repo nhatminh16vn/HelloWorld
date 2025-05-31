@@ -1,328 +1,141 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-    <title>Game 455 Bot Tránh Bóng</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #111;
-            font-family: Arial, sans-serif;
-        }
-        canvas {
-            display: block;
-            background-color: #000;
-        }
-        #gameOver {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: red;
-            font-size: 48px;
-            text-align: center;
-            display: none;
-            text-shadow: 0 0 10px white;
-            z-index: 100;
-        }
-        #info {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            color: white;
-            font-size: 16px;
-            z-index: 100;
-        }
-        #controls {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            color: white;
-            font-size: 14px;
-            z-index: 100;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Game Bóng & Bot</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    #game {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: url('https://images.unsplash.com/photo-1568605114967-8130f3a36994') center/cover no-repeat;
+    }
+    .player, .bot, .ball {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+    }
+    .player {
+      background: blue;
+      z-index: 10;
+    }
+    .ball {
+      background: white;
+      z-index: 9;
+    }
+    .bot {
+      background: red;
+    }
+    #message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2rem;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 20px;
+      display: none;
+    }
+  </style>
 </head>
 <body>
-    <div id="info">Bots còn sống: <span id="botCount">455</span> | Người chơi: <span id="playerStatus" style="color: lime;">ĐANG SỐNG</span></div>
-    <div id="controls">Điều khiển: WASD hoặc mũi tên | Mục tiêu: Tránh bóng đỏ</div>
-    <div id="gameOver">GAME OVER<br><span style="font-size: 24px">Nhấn F5 để chơi lại</span></div>
-    <canvas id="gameCanvas"></canvas>
+  <div id="game">
+    <div id="player" class="player"></div>
+    <div id="ball" class="ball"></div>
+    <div id="message">Thua cuộc!</div>
+  </div>
 
-    <script>
-        // Khởi tạo canvas
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+  <script>
+    const game = document.getElementById('game');
+    const player = document.getElementById('player');
+    const ball = document.getElementById('ball');
+    const message = document.getElementById('message');
+    const bots = [];
 
-        // Cấu hình game
-        const config = {
-            botCount: 455,
-            playerSize: 12,
-            botSize: 8,
-            ballSize: 14,
-            playerSpeed: 7,
-            minBotSpeed: 1,
-            maxBotSpeed: 4,
-            ballSpeed: 5
-        };
+    const GAME_WIDTH = window.innerWidth;
+    const GAME_HEIGHT = window.innerHeight;
 
-        // Người chơi
-        const player = {
-            x: canvas.width / 2,
-            y: canvas.height / 2,
-            size: config.playerSize,
-            speed: config.playerSpeed,
-            color: '#00FF00',
-            alive: true
-        };
+    // Khởi tạo vị trí ban đầu
+    let playerX = 100, playerY = 100;
+    let ballX = playerX + 40, ballY = playerY;
 
-        // Tạo 455 bot
-        const bots = [];
-        
-        for (let i = 0; i < config.botCount; i++) {
-            bots.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                size: config.botSize,
-                speed: config.minBotSpeed + Math.random() * (config.maxBotSpeed - config.minBotSpeed),
-                color: `hsl(${Math.random() * 60 + 200}, 80%, ${50 + Math.random() * 20}%)`,
-                angle: Math.random() * Math.PI * 2,
-                alive: true,
-                avoidanceRadius: 50 + Math.random() * 100
-            });
+    function movePlayer(dx, dy) {
+      playerX += dx;
+      playerY += dy;
+      ballX += dx;
+      ballY += dy;
+
+      // Giữ trong biên
+      playerX = Math.max(0, Math.min(GAME_WIDTH - 30, playerX));
+      playerY = Math.max(0, Math.min(GAME_HEIGHT - 30, playerY));
+      ballX = Math.max(0, Math.min(GAME_WIDTH - 30, ballX));
+      ballY = Math.max(0, Math.min(GAME_HEIGHT - 30, ballY));
+
+      player.style.left = playerX + 'px';
+      player.style.top = playerY + 'px';
+      ball.style.left = ballX + 'px';
+      ball.style.top = ballY + 'px';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      const speed = 5;
+      if (e.key === 'ArrowUp') movePlayer(0, -speed);
+      else if (e.key === 'ArrowDown') movePlayer(0, speed);
+      else if (e.key === 'ArrowLeft') movePlayer(-speed, 0);
+      else if (e.key === 'ArrowRight') movePlayer(speed, 0);
+    });
+
+    // Tạo bot ngẫu nhiên
+    for (let i = 0; i < 50; i++) {
+      const bot = document.createElement('div');
+      bot.className = 'bot';
+      bot.style.left = Math.random() * (GAME_WIDTH - 30) + 'px';
+      bot.style.top = Math.random() * (GAME_HEIGHT - 30) + 'px';
+      game.appendChild(bot);
+      bots.push({
+        el: bot,
+        x: parseFloat(bot.style.left),
+        y: parseFloat(bot.style.top),
+        dx: (Math.random() - 0.5) * 2,
+        dy: (Math.random() - 0.5) * 2
+      });
+    }
+
+    function updateBots() {
+      bots.forEach(bot => {
+        bot.x += bot.dx;
+        bot.y += bot.dy;
+
+        // Đảo hướng nếu va vào tường
+        if (bot.x < 0 || bot.x > GAME_WIDTH - 30) bot.dx *= -1;
+        if (bot.y < 0 || bot.y > GAME_HEIGHT - 30) bot.dy *= -1;
+
+        bot.el.style.left = bot.x + 'px';
+        bot.el.style.top = bot.y + 'px';
+
+        // Kiểm tra va chạm bóng
+        const dist = Math.hypot(bot.x - ballX, bot.y - ballY);
+        if (dist < 30) {
+          message.style.display = 'block';
+          cancelAnimationFrame(loop);
         }
+      });
+    }
 
-        // Quả bóng tử thần
-        const ball = {
-            x: canvas.width * 0.25,
-            y: canvas.height * 0.25,
-            radius: config.ballSize,
-            dx: config.ballSpeed,
-            dy: config.ballSpeed,
-            color: '#FF0000'
-        };
+    function gameLoop() {
+      updateBots();
+      loop = requestAnimationFrame(gameLoop);
+    }
 
-        // Điều khiển
-        const keys = {};
-        window.addEventListener('keydown', (e) => {
-            keys[e.key] = true;
-        });
-        window.addEventListener('keyup', (e) => {
-            keys[e.key] = false;
-        });
-
-        // Vẽ người chơi
-        function drawPlayer() {
-            if (!player.alive) return;
-            
-            ctx.beginPath();
-            ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-            
-            // Gradient cho người chơi
-            const gradient = ctx.createRadialGradient(
-                player.x, player.y, 0,
-                player.x, player.y, player.size
-            );
-            gradient.addColorStop(0, 'white');
-            gradient.addColorStop(0.7, player.color);
-            gradient.addColorStop(1, 'darkgreen');
-            
-            ctx.fillStyle = gradient;
-            ctx.fill();
-            ctx.closePath();
-        }
-
-        // Vẽ bot
-        function drawBot(bot) {
-            if (!bot.alive) return;
-            
-            ctx.beginPath();
-            ctx.arc(bot.x, bot.y, bot.size, 0, Math.PI * 2);
-            ctx.fillStyle = bot.color;
-            ctx.fill();
-            ctx.closePath();
-        }
-
-        // Vẽ bóng
-        function drawBall() {
-            ctx.beginPath();
-            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-            
-            // Hiệu ứng ánh sáng cho bóng
-            const gradient = ctx.createRadialGradient(
-                ball.x, ball.y, 0,
-                ball.x, ball.y, ball.radius
-            );
-            gradient.addColorStop(0, 'white');
-            gradient.addColorStop(0.5, ball.color);
-            gradient.addColorStop(1, 'darkred');
-            
-            ctx.fillStyle = gradient;
-            ctx.fill();
-            ctx.closePath();
-        }
-
-        // Kiểm tra va chạm
-        function checkCollision(x1, y1, r1, x2, y2, r2) {
-            const dx = x1 - x2;
-            const dy = y1 - y2;
-            return dx * dx + dy * dy < (r1 + r2) * (r1 + r2);
-        }
-
-        // AI cho bot tránh bóng
-        function moveBots() {
-            bots.forEach(bot => {
-                if (!bot.alive) return;
-                
-                // 5% cơ hội đổi hướng ngẫu nhiên
-                if (Math.random() < 0.05) {
-                    bot.angle = Math.random() * Math.PI * 2;
-                }
-                
-                // Tránh bóng nếu ở gần
-                const distToBall = Math.hypot(ball.x - bot.x, ball.y - bot.y);
-                if (distToBall < bot.avoidanceRadius) {
-                    const avoidAngle = Math.atan2(bot.y - ball.y, bot.x - ball.x);
-                    bot.angle = avoidAngle + (Math.random() - 0.5) * 0.5;
-                }
-                
-                // Di chuyển bot
-                bot.x += Math.cos(bot.angle) * bot.speed;
-                bot.y += Math.sin(bot.angle) * bot.speed;
-                
-                // Giới hạn trong màn hình
-                if (bot.x < bot.size) {
-                    bot.x = bot.size;
-                    bot.angle = Math.PI - bot.angle;
-                }
-                if (bot.x > canvas.width - bot.size) {
-                    bot.x = canvas.width - bot.size;
-                    bot.angle = Math.PI - bot.angle;
-                }
-                if (bot.y < bot.size) {
-                    bot.y = bot.size;
-                    bot.angle = -bot.angle;
-                }
-                if (bot.y > canvas.height - bot.size) {
-                    bot.y = canvas.height - bot.size;
-                    bot.angle = -bot.angle;
-                }
-            });
-        }
-
-        // Kiểm tra game over
-        function checkGameOver() {
-            // Kiểm tra người chơi
-            if (player.alive && checkCollision(player.x, player.y, player.size, ball.x, ball.y, ball.radius)) {
-                player.alive = false;
-                document.getElementById('playerStatus').textContent = "ĐÃ CHẾT";
-                document.getElementById('playerStatus').style.color = "red";
-                document.getElementById('gameOver').style.display = 'block';
-            }
-            
-            // Kiểm tra bot
-            bots.forEach(bot => {
-                if (bot.alive && checkCollision(bot.x, bot.y, bot.size, ball.x, ball.y, ball.radius)) {
-                    bot.alive = false;
-                }
-            });
-            
-            // Đếm bot còn sống
-            const aliveBots = bots.filter(bot => bot.alive).length;
-            document.getElementById('botCount').textContent = aliveBots;
-            
-            // Kiểm tra chiến thắng
-            if (aliveBots === 0 && player.alive) {
-                document.getElementById('gameOver').textContent = "CHIẾN THẮNG!\nBạn là người cuối cùng sống sót!\nNhấn F5 để chơi lại";
-                document.getElementById('gameOver').style.color = "lime";
-                document.getElementById('gameOver').style.display = 'block';
-            }
-        }
-
-        // Cập nhật bóng
-        function updateBall() {
-            // Di chuyển bóng
-            ball.x += ball.dx;
-            ball.y += ball.dy;
-            
-            // Bóng nảy khỏi tường
-            if (ball.x < ball.radius) {
-                ball.x = ball.radius;
-                ball.dx = -ball.dx;
-            }
-            if (ball.x > canvas.width - ball.radius) {
-                ball.x = canvas.width - ball.radius;
-                ball.dx = -ball.dx;
-            }
-            if (ball.y < ball.radius) {
-                ball.y = ball.radius;
-                ball.dy = -ball.dy;
-            }
-            if (ball.y > canvas.height - ball.radius) {
-                ball.y = canvas.height - ball.radius;
-                ball.dy = -ball.dy;
-            }
-            
-            // Thỉnh thoảng đổi hướng bóng ngẫu nhiên (5% cơ hội)
-            if (Math.random() < 0.05) {
-                ball.dx += (Math.random() - 0.5) * 2;
-                ball.dy += (Math.random() - 0.5) * 2;
-                
-                // Giới hạn tốc độ bóng
-                const speed = Math.hypot(ball.dx, ball.dy);
-                const maxSpeed = config.ballSpeed * 1.5;
-                if (speed > maxSpeed) {
-                    ball.dx = (ball.dx / speed) * maxSpeed;
-                    ball.dy = (ball.dy / speed) * maxSpeed;
-                }
-            }
-        }
-
-        // Game loop
-        function gameLoop() {
-            if (!player.alive) return;
-            
-            // Xóa màn hình
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Di chuyển người chơi
-            if (keys['ArrowUp'] || keys['w']) player.y -= player.speed;
-            if (keys['ArrowDown'] || keys['s']) player.y += player.speed;
-            if (keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
-            if (keys['ArrowRight'] || keys['d']) player.x += player.speed;
-            
-            // Giới hạn người chơi
-            player.x = Math.max(player.size, Math.min(canvas.width - player.size, player.x));
-            player.y = Math.max(player.size, Math.min(canvas.height - player.size, player.y));
-            
-            // Di chuyển bot
-            moveBots();
-            
-            // Cập nhật bóng
-            updateBall();
-            
-            // Kiểm tra va chạm
-            checkGameOver();
-            
-            // Vẽ tất cả
-            bots.forEach(drawBot);
-            drawBall();
-            drawPlayer();
-            
-            // Lặp lại game loop
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Xử lý thay đổi kích thước màn hình
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-
-        // Bắt đầu game
-        gameLoop();
-    </script>
+    let loop = requestAnimationFrame(gameLoop);
+    movePlayer(0, 0); // render lần đầu
+  </script>
 </body>
 </html>
