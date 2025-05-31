@@ -1,274 +1,117 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Di Chuyển cùng 455 Bot</title>
+    <title>Game Hiragana Di Chuyển</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #87CEEB;
+            background-color: #f0f0f0;
             font-family: Arial, sans-serif;
         }
-        #gameContainer {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            background-color: #8FBC8F;
-        }
-        #player {
+        
+        #hiragana {
             position: absolute;
-            width: 30px;
-            height: 30px;
-            background-color: blue;
-            border-radius: 50%;
-            z-index: 10;
+            font-size: 72px;
+            font-weight: bold;
+            color: #e74c3c;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            user-select: none;
+            transition: all 1s ease-out;
         }
-        .bot {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background-color: gray;
-            border-radius: 50%;
-        }
-        .ball {
-            position: absolute;
-            width: 25px;
-            height: 25px;
-            background-color: red;
-            border-radius: 50%;
-            z-index: 5;
-        }
-        .house {
-            position: absolute;
-            background-color: #8B4513;
-            z-index: 5;
-        }
-        .tree {
-            position: absolute;
-            background-color: #228B22;
-            border-radius: 50%;
-            z-index: 5;
-        }
-        #score {
-            position: absolute;
-            top: 10px;
+        
+        #info {
+            position: fixed;
+            bottom: 10px;
             left: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
             color: white;
-            font-size: 20px;
-            z-index: 20;
-            background-color: rgba(0,0,0,0.5);
-            padding: 5px;
+            padding: 5px 10px;
             border-radius: 5px;
-        }
-        #gameOver {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 40px;
-            z-index: 30;
-            background-color: rgba(0,0,0,0.7);
-            padding: 20px;
-            border-radius: 10px;
-            display: none;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
-    <div id="gameContainer">
-        <div id="player"></div>
-        <div id="score">Thời gian: 0 giây</div>
-        <div id="gameOver">GAME OVER!<br><button onclick="resetGame()">Chơi lại</button></div>
-    </div>
+    <div id="hiragana">あ</div>
+    <div id="info">Chữ Hiragana sẽ thay đổi sau: <span id="countdown">10</span>s</div>
 
     <script>
-        const gameContainer = document.getElementById('gameContainer');
-        const player = document.getElementById('player');
-        const scoreDisplay = document.getElementById('score');
-        const gameOverDisplay = document.getElementById('gameOver');
+        // Danh sách các chữ Hiragana cơ bản
+        const hiraganaList = [
+            'あ', 'い', 'う', 'え', 'お',
+            'か', 'き', 'く', 'け', 'こ',
+            'さ', 'し', 'す', 'せ', 'そ',
+            'た', 'ち', 'つ', 'て', 'と',
+            'な', 'に', 'ぬ', 'ね', 'の',
+            'は', 'ひ', 'ふ', 'へ', 'ほ',
+            'ま', 'み', 'む', 'め', 'も',
+            'や', 'ゆ', 'よ',
+            'ら', 'り', 'る', 'れ', 'ろ',
+            'わ', 'を', 'ん'
+        ];
+
+        const hiraganaElement = document.getElementById('hiragana');
+        const countdownElement = document.getElementById('countdown');
         
-        const gameWidth = window.innerWidth;
-        const gameHeight = window.innerHeight;
+        let countdown = 10;
+        let screenWidth = window.innerWidth;
+        let screenHeight = window.innerHeight;
         
-        let playerX = gameWidth / 2;
-        let playerY = gameHeight / 2;
-        const playerSpeed = 5;
-        
-        let bots = []; // Mảng lưu trữ tất cả bot
-        let gameInterval;
-        
-        function createVillage() {
-            // Tạo các ngôi nhà
-            for (let i = 0; i < 10; i++) {
-                const house = document.createElement('div');
-                house.className = 'house';
-                const width = 60 + Math.random() * 80;
-                const height = 80 + Math.random() * 100;
-                house.style.width = width + 'px';
-                house.style.height = height + 'px';
-                house.style.left = Math.random() * (gameWidth - width) + 'px';
-                house.style.top = Math.random() * (gameHeight - height) + 'px';
-                gameContainer.appendChild(house);
-            }
-            
-            // Tạo các cây
-            for (let i = 0; i < 20; i++) {
-                const tree = document.createElement('div');
-                tree.className = 'tree';
-                const size = 30 + Math.random() * 50;
-                tree.style.width = size + 'px';
-                tree.style.height = size + 'px';
-                tree.style.left = Math.random() * (gameWidth - size) + 'px';
-                tree.style.top = Math.random() * (gameHeight - size) + 'px';
-                gameContainer.appendChild(tree);
-            }
+        // Hàm chọn ngẫu nhiên một chữ Hiragana
+        function getRandomHiragana() {
+            const randomIndex = Math.floor(Math.random() * hiraganaList.length);
+            return hiraganaList[randomIndex];
         }
         
-        function createBots() {
-            for (let i = 0; i < 455; i++) {
-                const bot = document.createElement('div');
-                bot.className = 'bot';
-                bot.style.left = Math.random() * gameWidth + 'px';
-                bot.style.top = Math.random() * gameHeight + 'px';
-                gameContainer.appendChild(bot);
-                bots.push(bot);
-                
-                // Di chuyển bot ngẫu nhiên (không gây thua)
-                setInterval(() => {
-                    const currentLeft = parseInt(bot.style.left);
-                    const currentTop = parseInt(bot.style.top);
-                    const moveX = (Math.random() * 4 - 2);
-                    const moveY = (Math.random() * 4 - 2);
-                    
-                    let newLeft = currentLeft + moveX;
-                    let newTop = currentTop + moveY;
-                    
-                    newLeft = Math.max(0, Math.min(gameWidth - 20, newLeft));
-                    newTop = Math.max(0, Math.min(gameHeight - 20, newTop));
-                    
-                    bot.style.left = newLeft + 'px';
-                    bot.style.top = newTop + 'px';
-                }, 50);
+        // Hàm di chuyển chữ Hiragana đến vị trí ngẫu nhiên
+        function moveRandomly() {
+            const maxX = screenWidth - 100;
+            const maxY = screenHeight - 100;
+            
+            const randomX = Math.floor(Math.random() * maxX);
+            const randomY = Math.floor(Math.random() * maxY);
+            
+            hiraganaElement.style.left = randomX + 'px';
+            hiraganaElement.style.top = randomY + 'px';
+            
+            // Di chuyển lại sau 2-5 giây
+            setTimeout(moveRandomly, 2000 + Math.random() * 3000);
+        }
+        
+        // Hàm thay đổi chữ Hiragana
+        function changeHiragana() {
+            hiraganaElement.textContent = getRandomHiragana();
+            countdown = 10;
+            updateCountdown();
+        }
+        
+        // Hàm cập nhật đồng hồ đếm ngược
+        function updateCountdown() {
+            countdownElement.textContent = countdown;
+            
+            if (countdown <= 0) {
+                changeHiragana();
+            } else {
+                countdown--;
+                setTimeout(updateCountdown, 1000);
             }
         }
         
-        function createBall() {
-            const ball = document.createElement('div');
-            ball.className = 'ball';
-            ball.style.left = Math.random() * (gameWidth - 25) + 'px';
-            ball.style.top = Math.random() * (gameHeight - 25) + 'px';
-            gameContainer.appendChild(ball);
-            
-            let ballSpeedX = (Math.random() * 6 - 3);
-            let ballSpeedY = (Math.random() * 6 - 3);
-            
-            const ballInterval = setInterval(() => {
-                const currentLeft = parseInt(ball.style.left);
-                const currentTop = parseInt(ball.style.top);
-                
-                let newLeft = currentLeft + ballSpeedX;
-                let newTop = currentTop + ballSpeedY;
-                
-                // Đổi hướng khi chạm biên
-                if (newLeft <= 0 || newLeft >= gameWidth - 25) {
-                    ballSpeedX *= -1;
-                    newLeft = currentLeft + ballSpeedX;
-                }
-                if (newTop <= 0 || newTop >= gameHeight - 25) {
-                    ballSpeedY *= -1;
-                    newTop = currentTop + ballSpeedY;
-                }
-                
-                ball.style.left = newLeft + 'px';
-                ball.style.top = newTop + 'px';
-                
-                // Kiểm tra va chạm với người chơi (chỉ bóng gây thua)
-                if (checkCollision(player, ball)) {
-                    gameOver();
-                    clearInterval(ballInterval);
-                }
-            }, 20);
-        }
-        
-        function checkCollision(element1, element2) {
-            const rect1 = element1.getBoundingClientRect();
-            const rect2 = element2.getBoundingClientRect();
-            
-            return !(
-                rect1.right < rect2.left || 
-                rect1.left > rect2.right || 
-                rect1.bottom < rect2.top || 
-                rect1.top > rect2.bottom
-            );
-        }
-        
-        function gameOver() {
-            clearInterval(gameInterval);
-            gameOverDisplay.style.display = 'block';
-        }
-        
-        function resetGame() {
-            location.reload();
-        }
-        
-        const keys = {
-            ArrowUp: false,
-            ArrowDown: false,
-            ArrowLeft: false,
-            ArrowRight: false
-        };
-        
-        document.addEventListener('keydown', (e) => {
-            if (keys.hasOwnProperty(e.key)) {
-                keys[e.key] = true;
-            }
+        // Xử lý thay đổi kích thước màn hình
+        window.addEventListener('resize', () => {
+            screenWidth = window.innerWidth;
+            screenHeight = window.innerHeight;
         });
         
-        document.addEventListener('keyup', (e) => {
-            if (keys.hasOwnProperty(e.key)) {
-                keys[e.key] = false;
-            }
-        });
+        // Bắt đầu game
+        moveRandomly();
+        updateCountdown();
         
-        function updatePlayerPosition() {
-            if (keys.ArrowUp) playerY -= playerSpeed;
-            if (keys.ArrowDown) playerY += playerSpeed;
-            if (keys.ArrowLeft) playerX -= playerSpeed;
-            if (keys.ArrowRight) playerX += playerSpeed;
-            
-            playerX = Math.max(15, Math.min(gameWidth - 15, playerX));
-            playerY = Math.max(15, Math.min(gameHeight - 15, playerY));
-            
-            player.style.left = (playerX - 15) + 'px';
-            player.style.top = (playerY - 15) + 'px';
-        }
-        
-        let time = 0;
-        function updateTime() {
-            time++;
-            scoreDisplay.textContent = `Thời gian: ${time} giây`;
-        }
-        
-        function initGame() {
-            createVillage();
-            createBots();
-            createBall();
-            
-            playerX = gameWidth / 2;
-            playerY = gameHeight / 2;
-            player.style.left = (playerX - 15) + 'px';
-            player.style.top = (playerY - 15) + 'px';
-            
-            gameInterval = setInterval(() => {
-                updatePlayerPosition();
-                updateTime();
-            }, 1000/60);
-        }
-        
-        window.onload = initGame;
+        // Thay đổi chữ Hiragana ban đầu
+        changeHiragana();
     </script>
 </body>
 </html>
