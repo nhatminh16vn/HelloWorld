@@ -3,524 +3,460 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Ném Bóng</title>
+    <title>Trang Trại Vui Vẻ</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-        }
-        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background-color: #a8e6cf;
+            margin: 0;
             padding: 20px;
-        }
-        
-        .container {
-            max-width: 900px;
-            width: 100%;
             text-align: center;
         }
         
-        header {
-            margin-bottom: 30px;
+        .game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #dcedc1;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
         }
         
         h1 {
-            font-size: 3.5rem;
-            margin-bottom: 10px;
-            text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
-            background: linear-gradient(to right, #ff7e5f, #feb47b);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+            color: #ff8b94;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
         
-        .instructions {
-            font-size: 1.2rem;
-            max-width: 600px;
-            margin: 0 auto 30px;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 15px;
-            border-radius: 10px;
-            line-height: 1.6;
+        .farm {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-gap: 10px;
+            margin: 20px 0;
         }
         
-        .game-area {
-            position: relative;
+        .plot {
             width: 100%;
-            height: 500px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        #ball {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            background: radial-gradient(circle at 30% 30%, #ff7e5f, #e74c3c);
-            border-radius: 50%;
-            cursor: grab;
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
-            z-index: 10;
-            left: 150px;
-            bottom: 100px;
-            transition: transform 0.2s;
-        }
-        
-        #ball:active {
-            cursor: grabbing;
-            transform: scale(1.1);
-        }
-        
-        .target {
-            position: absolute;
-            width: 120px;
-            height: 120px;
-            background: rgba(46, 204, 113, 0.3);
-            border: 3px dashed #2ecc71;
-            border-radius: 50%;
+            height: 100px;
+            background-color: #ffd3b6;
+            border-radius: 10px;
             display: flex;
-            align-items: center;
             justify-content: center;
-            right: 200px;
-            bottom: 150px;
-            animation: pulse 2s infinite;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
         }
         
-        .target::after {
-            content: "🎯";
+        .plot:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .plot.empty {
+            background-color: #ffd3b6;
+        }
+        
+        .plot.planted {
+            background-color: #a8e6cf;
+        }
+        
+        .plot.ready {
+            background-color: #dcedc1;
+            animation: pulse 1s infinite;
+        }
+        
+        .crop {
+            font-size: 30px;
+            position: absolute;
+        }
+        
+        .animal {
             font-size: 40px;
-            filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5));
+            position: absolute;
         }
         
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.05); opacity: 1; }
-            100% { transform: scale(1); opacity: 0.8; }
+        .progress-bar {
+            width: 100%;
+            height: 5px;
+            background-color: #ffaaa5;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: #ff8b94;
+            width: 0%;
         }
         
         .stats {
             display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
+            justify-content: space-around;
+            background-color: #ffaaa5;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
         }
         
-        .stat-box {
-            background: rgba(0, 0, 0, 0.4);
-            padding: 15px 30px;
-            border-radius: 15px;
-            min-width: 150px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         
         .stat-value {
-            font-size: 2.5rem;
+            font-size: 24px;
             font-weight: bold;
-            color: #ffd700;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            color: #fff;
         }
         
-        .controls {
+        .stat-label {
+            font-size: 14px;
+            color: #fff;
+        }
+        
+        .shop {
             display: flex;
-            gap: 20px;
-            justify-content: center;
-            margin-top: 20px;
+            justify-content: space-around;
             flex-wrap: wrap;
+            margin-top: 20px;
         }
         
-        button {
-            background: linear-gradient(to right, #ff7e5f, #feb47b);
+        .shop-item {
+            background-color: #ff8b94;
             color: white;
-            border: none;
-            padding: 15px 35px;
-            font-size: 1.2rem;
-            border-radius: 50px;
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin: 5px;
             cursor: pointer;
             transition: all 0.3s;
-            font-weight: bold;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
         
-        button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        .shop-item:hover {
+            transform: scale(1.05);
         }
         
-        button:active {
-            transform: translateY(1px);
+        .shop-item:active {
+            transform: scale(0.95);
         }
         
-        .power-indicator {
-            position: absolute;
-            height: 8px;
-            background: linear-gradient(to right, #00b09b, #96c93d);
-            border-radius: 4px;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: none;
-            box-shadow: 0 0 10px rgba(150, 201, 61, 0.5);
+        .disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         
-        .trail {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background: rgba(255, 215, 0, 0.7);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 5;
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
         
         .message {
-            position: absolute;
-            top: 50%;
+            position: fixed;
+            top: 20px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px 40px;
-            border-radius: 15px;
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #ffd700;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 100;
             display: none;
-            z-index: 20;
-            text-align: center;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-        }
-        
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2.5rem;
-            }
-            
-            .game-area {
-                height: 400px;
-            }
-            
-            .stat-box {
-                padding: 10px 20px;
-                min-width: 120px;
-            }
-            
-            .stat-value {
-                font-size: 2rem;
-            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>GAME NÉM BÓNG</h1>
-            <p class="instructions">Kéo và thả quả bóng để ném vào mục tiêu. Càng gần tâm mục tiêu, điểm càng cao!</p>
-        </header>
-        
-        <div class="game-area">
-            <div id="ball"></div>
-            <div class="target"></div>
-            <div class="power-indicator" id="powerIndicator"></div>
-            <div class="message" id="message">TRÚNG MỤC TIÊU!</div>
-        </div>
+    <div class="game-container">
+        <h1>TRANG TRẠI VUI VẺ</h1>
         
         <div class="stats">
-            <div class="stat-box">
-                <div>LẦN NÉM</div>
-                <div class="stat-value" id="throwCount">0</div>
+            <div class="stat">
+                <div class="stat-value" id="money">100</div>
+                <div class="stat-label">Tiền</div>
             </div>
-            <div class="stat-box">
-                <div>ĐIỂM CAO</div>
-                <div class="stat-value" id="highScore">0</div>
+            <div class="stat">
+                <div class="stat-value" id="level">1</div>
+                <div class="stat-label">Cấp độ</div>
             </div>
-            <div class="stat-box">
-                <div>ĐIỂM HIỆN TẠI</div>
-                <div class="stat-value" id="currentScore">0</div>
+            <div class="stat">
+                <div class="stat-value" id="xp">0</div>
+                <div class="stat-label">Kinh nghiệm</div>
             </div>
         </div>
         
-        <div class="controls">
-            <button id="resetBtn">NÉM LẠI</button>
-            <button id="newGameBtn">GAME MỚI</button>
+        <div class="farm" id="farm"></div>
+        
+        <h2>Cửa hàng</h2>
+        <div class="shop">
+            <div class="shop-item" data-type="carrot" data-cost="10" data-time="5">
+                🥕 Cà rốt (10₫)
+            </div>
+            <div class="shop-item" data-type="corn" data-cost="20" data-time="10">
+                🌽 Ngô (20₫)
+            </div>
+            <div class="shop-item" data-type="wheat" data-cost="30" data-time="15">
+                🌾 Lúa mì (30₫)
+            </div>
+            <div class="shop-item" data-type="chicken" data-cost="50" data-time="20">
+                🐔 Gà (50₫)
+            </div>
+            <div class="shop-item" data-type="cow" data-cost="100" data-time="30">
+                🐄 Bò (100₫)
+            </div>
         </div>
     </div>
-
+    
+    <div class="message" id="message"></div>
+    
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const ball = document.getElementById('ball');
-            const target = document.querySelector('.target');
-            const powerIndicator = document.getElementById('powerIndicator');
-            const throwCountElement = document.getElementById('throwCount');
-            const highScoreElement = document.getElementById('highScore');
-            const currentScoreElement = document.getElementById('currentScore');
-            const resetBtn = document.getElementById('resetBtn');
-            const newGameBtn = document.getElementById('newGameBtn');
-            const message = document.getElementById('message');
-            
-            let throwCount = 0;
-            let currentScore = 0;
-            let highScore = 0;
-            let isDragging = false;
-            let startX, startY;
-            let throwPower = 0;
-            let throwAngle = 0;
-            let ballX = 150, ballY = 450;
-            let trailTimer;
-            
-            // Cập nhật vị trí bóng
-            function updateBallPosition() {
-                ball.style.left = `${ballX}px`;
-                ball.style.bottom = `${ballY}px`;
-            }
+            const farm = document.getElementById('farm');
+            const moneyElement = document.getElementById('money');
+            const levelElement = document.getElementById('level');
+            const xpElement = document.getElementById('xp');
+            const messageElement = document.getElementById('message');
+            const shopItems = document.querySelectorAll('.shop-item');
             
             // Khởi tạo game
-            function initGame() {
-                throwCount = 0;
-                currentScore = 0;
-                updateStats();
-                resetBall();
+            let money = 100;
+            let level = 1;
+            let xp = 0;
+            let plots = [];
+            const plotCount = 10;
+            
+            // Tạo các ô đất
+            function createPlots() {
+                farm.innerHTML = '';
+                plots = [];
+                
+                for (let i = 0; i < plotCount; i++) {
+                    const plot = document.createElement('div');
+                    plot.className = 'plot empty';
+                    plot.dataset.index = i;
+                    plot.innerHTML = '<div class="progress-bar"><div class="progress"></div></div>';
+                    plot.addEventListener('click', handlePlotClick);
+                    
+                    farm.appendChild(plot);
+                    plots.push({
+                        element: plot,
+                        type: null,
+                        progress: 0,
+                        time: 0,
+                        maxTime: 0,
+                        interval: null
+                    });
+                }
             }
             
-            // Reset bóng về vị trí ban đầu
-            function resetBall() {
-                ballX = 150;
-                ballY = 100;
-                updateBallPosition();
-                ball.style.display = 'block';
-                isDragging = false;
-                powerIndicator.style.display = 'none';
+            // Xử lý khi click vào ô đất
+            function handlePlotClick(e) {
+                const index = e.currentTarget.dataset.index;
+                const plot = plots[index];
+                
+                if (plot.type === null) return;
+                
+                // Nếu cây/động vật đã sẵn sàng để thu hoạch
+                if (plot.progress >= plot.maxTime) {
+                    harvestPlot(index);
+                }
+            }
+            
+            // Thu hoạch từ ô đất
+            function harvestPlot(index) {
+                const plot = plots[index];
+                
+                // Dừng đếm ngược
+                clearInterval(plot.interval);
+                
+                // Tính toán tiền và XP nhận được
+                let earnedMoney = 0;
+                let earnedXp = 0;
+                
+                switch(plot.type) {
+                    case 'carrot':
+                        earnedMoney = 20;
+                        earnedXp = 5;
+                        break;
+                    case 'corn':
+                        earnedMoney = 40;
+                        earnedXp = 10;
+                        break;
+                    case 'wheat':
+                        earnedMoney = 60;
+                        earnedXp = 15;
+                        break;
+                    case 'chicken':
+                        earnedMoney = 80;
+                        earnedXp = 20;
+                        break;
+                    case 'cow':
+                        earnedMoney = 150;
+                        earnedXp = 30;
+                        break;
+                }
+                
+                // Cập nhật tiền và XP
+                money += earnedMoney;
+                xp += earnedXp;
+                
+                // Kiểm tra lên cấp
+                checkLevelUp();
+                
+                // Hiển thị thông báo
+                showMessage(`Thu hoạch thành công! +${earnedMoney}₫ +${earnedXp}XP`);
+                
+                // Reset ô đất
+                resetPlot(index);
+                updateStats();
+            }
+            
+            // Reset ô đất về trạng thái ban đầu
+            function resetPlot(index) {
+                const plot = plots[index];
+                
+                plot.type = null;
+                plot.progress = 0;
+                plot.time = 0;
+                plot.maxTime = 0;
+                plot.element.className = 'plot empty';
+                plot.element.querySelector('.progress').style.width = '0%';
+                plot.element.innerHTML = '<div class="progress-bar"><div class="progress"></div></div>';
+                plot.element.addEventListener('click', handlePlotClick);
+            }
+            
+            // Mua vật phẩm từ cửa hàng
+            function setupShop() {
+                shopItems.forEach(item => {
+                    item.addEventListener('click', function() {
+                        if (this.classList.contains('disabled')) return;
+                        
+                        const type = this.dataset.type;
+                        const cost = parseInt(this.dataset.cost);
+                        const time = parseInt(this.dataset.time);
+                        
+                        if (money >= cost) {
+                            // Tìm ô đất trống
+                            const emptyPlotIndex = plots.findIndex(p => p.type === null);
+                            
+                            if (emptyPlotIndex !== -1) {
+                                money -= cost;
+                                plantItem(emptyPlotIndex, type, time);
+                                updateStats();
+                                
+                                // Kiểm tra nếu không đủ tiền mua tiếp
+                                checkShopItems();
+                            } else {
+                                showMessage('Không còn ô đất trống!');
+                            }
+                        } else {
+                            showMessage('Không đủ tiền!');
+                        }
+                    });
+                });
+            }
+            
+            // Trồng cây/ nuôi động vật
+            function plantItem(index, type, time) {
+                const plot = plots[index];
+                
+                plot.type = type;
+                plot.progress = 0;
+                plot.time = 0;
+                plot.maxTime = time;
+                
+                // Cập nhật giao diện
+                plot.element.className = 'plot planted';
+                
+                // Thêm biểu tượng cây/động vật
+                const icon = document.createElement('div');
+                icon.className = type === 'chicken' || type === 'cow' ? 'animal' : 'crop';
+                
+                switch(type) {
+                    case 'carrot': icon.textContent = '🥕'; break;
+                    case 'corn': icon.textContent = '🌽'; break;
+                    case 'wheat': icon.textContent = '🌾'; break;
+                    case 'chicken': icon.textContent = '🐔'; break;
+                    case 'cow': icon.textContent = '🐄'; break;
+                }
+                
+                plot.element.appendChild(icon);
+                
+                // Bắt đầu đếm ngược
+                plot.interval = setInterval(() => {
+                    plot.time++;
+                    plot.progress = (plot.time / plot.maxTime) * 100;
+                    
+                    plot.element.querySelector('.progress').style.width = `${plot.progress}%`;
+                    
+                    // Khi sẵn sàng thu hoạch
+                    if (plot.time >= plot.maxTime) {
+                        clearInterval(plot.interval);
+                        plot.element.classList.add('ready');
+                        showMessage(`${getItemName(type)} đã sẵn sàng để thu hoạch!`);
+                    }
+                }, 1000);
+            }
+            
+            // Kiểm tra lên cấp
+            function checkLevelUp() {
+                const xpNeeded = level * 100;
+                
+                if (xp >= xpNeeded) {
+                    xp -= xpNeeded;
+                    level++;
+                    showMessage(`Chúc mừng! Bạn đã lên cấp ${level}`);
+                    updateStats();
+                }
+            }
+            
+            // Kiểm tra các vật phẩm có thể mua
+            function checkShopItems() {
+                shopItems.forEach(item => {
+                    const cost = parseInt(item.dataset.cost);
+                    
+                    if (money < cost) {
+                        item.classList.add('disabled');
+                    } else {
+                        item.classList.remove('disabled');
+                    }
+                });
             }
             
             // Cập nhật thống kê
             function updateStats() {
-                throwCountElement.textContent = throwCount;
-                currentScoreElement.textContent = currentScore;
-                highScoreElement.textContent = highScore;
+                moneyElement.textContent = money;
+                levelElement.textContent = level;
+                xpElement.textContent = xp;
             }
             
             // Hiển thị thông báo
             function showMessage(text) {
-                message.textContent = text;
-                message.style.display = 'block';
+                messageElement.textContent = text;
+                messageElement.style.display = 'block';
                 
                 setTimeout(() => {
-                    message.style.display = 'none';
+                    messageElement.style.display = 'none';
                 }, 2000);
             }
             
-            // Tạo vệt khi bóng di chuyển
-            function createTrail(x, y) {
-                const trail = document.createElement('div');
-                trail.className = 'trail';
-                trail.style.left = `${x}px`;
-                trail.style.bottom = `${y}px`;
-                document.querySelector('.game-area').appendChild(trail);
-                
-                setTimeout(() => {
-                    trail.style.opacity = '0';
-                    trail.style.transform = 'scale(0.5)';
-                    setTimeout(() => {
-                        trail.remove();
-                    }, 500);
-                }, 100);
-            }
-            
-            // Xử lý bắt đầu kéo
-            ball.addEventListener('mousedown', startDrag);
-            ball.addEventListener('touchstart', startDrag, {passive: false});
-            
-            function startDrag(e) {
-                e.preventDefault();
-                isDragging = true;
-                
-                if (e.type === 'mousedown') {
-                    startX = e.clientX;
-                    startY = e.clientY;
-                } else if (e.type === 'touchstart') {
-                    startX = e.touches[0].clientX;
-                    startY = e.touches[0].clientY;
+            // Lấy tên vật phẩm
+            function getItemName(type) {
+                switch(type) {
+                    case 'carrot': return 'Cà rốt';
+                    case 'corn': return 'Ngô';
+                    case 'wheat': return 'Lúa mì';
+                    case 'chicken': return 'Gà';
+                    case 'cow': return 'Bò';
+                    default: return '';
                 }
-                
-                // Hiển thị chỉ số lực ném
-                powerIndicator.style.display = 'block';
-                powerIndicator.style.width = '0px';
             }
-            
-            // Xử lý khi đang kéo
-            document.addEventListener('mousemove', drag);
-            document.addEventListener('touchmove', drag, {passive: false});
-            
-            function drag(e) {
-                if (!isDragging) return;
-                e.preventDefault();
-                
-                let currentX, currentY;
-                if (e.type === 'mousemove') {
-                    currentX = e.clientX;
-                    currentY = e.clientY;
-                } else if (e.type === 'touchmove') {
-                    currentX = e.touches[0].clientX;
-                    currentY = e.touches[0].clientY;
-                }
-                
-                // Tính khoảng cách kéo
-                const dx = startX - currentX;
-                const dy = startY - currentY;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                // Giới hạn khoảng cách kéo
-                const maxDistance = 200;
-                const limitedDistance = Math.min(distance, maxDistance);
-                
-                // Tính toán lực ném (0-100)
-                throwPower = Math.round((limitedDistance / maxDistance) * 100);
-                
-                // Tính góc ném
-                throwAngle = Math.atan2(dy, dx);
-                
-                // Cập nhật chỉ số lực ném
-                powerIndicator.style.width = `${limitedDistance}px`;
-                
-                // Di chuyển bóng theo chuột
-                ballX = 150 - (dx / 5);
-                ballY = 100 - (dy / 5);
-                updateBallPosition();
-            }
-            
-            // Xử lý khi thả bóng
-            document.addEventListener('mouseup', release);
-            document.addEventListener('touchend', release);
-            
-            function release() {
-                if (!isDragging) return;
-                isDragging = false;
-                
-                throwCount++;
-                powerIndicator.style.display = 'none';
-                
-                // Tính toán vận tốc dựa trên lực ném
-                const velocity = throwPower / 8;
-                const vx = Math.cos(throwAngle) * velocity;
-                const vy = Math.sin(throwAngle) * velocity;
-                
-                // Bắt đầu animation ném bóng
-                throwBall(vx, vy);
-            }
-            
-            // Animation ném bóng
-            function throwBall(vx, vy) {
-                // Xóa bất kỳ trail nào trước đó
-                clearTimeout(trailTimer);
-                
-                const gravity = 0.2;
-                let x = ballX;
-                let y = ballY;
-                
-                function animate() {
-                    // Cập nhật vị trí
-                    x += vx;
-                    y += vy;
-                    vy += gravity;
-                    
-                    // Tạo vệt
-                    if (throwCount % 2 === 0) {
-                        createTrail(x, y);
-                    }
-                    
-                    // Cập nhật vị trí bóng
-                    ball.style.left = `${x}px`;
-                    ball.style.bottom = `${y}px`;
-                    
-                    // Kiểm tra va chạm với biên
-                    if (x < 0 || x > 850 || y > 500) {
-                        checkScore(x, y);
-                        return;
-                    }
-                    
-                    // Kiểm tra va chạm với mục tiêu
-                    const targetRect = target.getBoundingClientRect();
-                    const ballRect = ball.getBoundingClientRect();
-                    
-                    if (
-                        ballRect.right > targetRect.left &&
-                        ballRect.left < targetRect.right &&
-                        ballRect.bottom > targetRect.top &&
-                        ballRect.top < targetRect.bottom
-                    ) {
-                        calculateScore(ballRect, targetRect);
-                        return;
-                    }
-                    
-                    // Tiếp tục animation
-                    requestAnimationFrame(animate);
-                }
-                
-                animate();
-            }
-            
-            // Tính điểm khi bóng chạm mục tiêu
-            function calculateScore(ballRect, targetRect) {
-                const targetCenterX = targetRect.left + targetRect.width / 2;
-                const targetCenterY = targetRect.top + targetRect.height / 2;
-                
-                const ballCenterX = ballRect.left + ballRect.width / 2;
-                const ballCenterY = ballRect.top + ballRect.height / 2;
-                
-                const dx = ballCenterX - targetCenterX;
-                const dy = ballCenterY - targetCenterY;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                // Tính điểm dựa trên khoảng cách đến tâm
-                let score;
-                if 
-                } else {
-                    score = 25;
-                    showMessage("KHÁ! 250 ĐIỂM");
-                }
-                
-                currentScore += score;
-                if (currentScore > highScore) {
-                    highScore = currentScore;
-                }
-                updateStats();
-                
-                // Ẩn bóng tạm thời
-                setTimeout(() => {
-                    ball.style.display = 'none';
-                }, 500);
-            }
-            
-            // Xử lý khi bóng ra ngoài màn hình
-            function checkScore(x, y) {
-                showMessage("HỤT RỒI!");
-                
-                // Reset bóng sau 1 giây
-                setTimeout(() => {
-                    resetBall();
-                }, 1000);
-            }
-            
-            // Sự kiện nút
-            resetBtn.addEventListener('click', resetBall);
-            newGameBtn.addEventListener('click', initGame);
             
             // Khởi động game
-            initGame();
+            createPlots();
+            setupShop();
+            checkShopItems();
         });
     </script>
 </body>
