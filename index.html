@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Bóng Đá 3D với Bot</title>
+    <title>11 Bot vs 11 Bot Football</title>
     <style>
         body { 
             margin: 0; 
@@ -44,13 +44,12 @@
     </style>
 </head>
 <body>
-    <div id="info">Game Bóng Đá 3D với Bot - Dùng phím mũi tên để di chuyển, Space để sút bóng</div>
-    <div id="score">Bạn: 0 - Bot: 0</div>
+    <div id="info">11 Bot vs 11 Bot Football Simulation</div>
+    <div id="score">Team A: 0 - Team B: 0</div>
     <div id="controls">
-        <p>Điều khiển:</p>
-        <p>↑↓←→: Di chuyển</p>
-        <p>Space: Sút bóng</p>
-        <p>R: Reset game</p>
+        <p>Controls:</p>
+        <p>R: Reset simulation</p>
+        <p>P: Pause/Resume</p>
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -70,8 +69,10 @@
         world.broadphase = new CANNON.NaiveBroadphase();
         world.solver.iterations = 10;
 
-        // Tạo sân bóng
-        const groundGeometry = new THREE.PlaneGeometry(40, 25);
+        // Tạo sân bóng lớn hơn
+        const pitchWidth = 60;
+        const pitchHeight = 40;
+        const groundGeometry = new THREE.PlaneGeometry(pitchWidth, pitchHeight);
         const groundMaterial = new THREE.MeshStandardMaterial({ 
             color: 0x00AA00,
             side: THREE.DoubleSide
@@ -89,59 +90,67 @@
         world.addBody(groundBody);
 
         // Tạo đường giữa sân
-        const lineGeometry = new THREE.BoxGeometry(0.5, 0.1, 25);
+        const lineGeometry = new THREE.BoxGeometry(0.5, 0.1, pitchHeight);
         const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
         const line = new THREE.Mesh(lineGeometry, lineMaterial);
         line.position.set(0, 0.1, 0);
         scene.add(line);
 
+        // Tạo vòng tròn giữa sân
+        const circleGeometry = new THREE.TorusGeometry(5, 0.2, 16, 32);
+        const circleMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+        const circle = new THREE.Mesh(circleGeometry, circleMaterial);
+        circle.rotation.x = -Math.PI / 2;
+        circle.position.set(0, 0.1, 0);
+        scene.add(circle);
+
         // Tạo khung thành
         function createGoal(x, z, color) {
             // Khung thành chính
-            const goalGeometry = new THREE.BoxGeometry(3, 2, 1.5);
+            const goalGeometry = new THREE.BoxGeometry(3, 2.5, 2);
             const goalMaterial = new THREE.MeshStandardMaterial({ 
                 color: color,
                 transparent: true,
                 opacity: 0.7
             });
             const goal = new THREE.Mesh(goalGeometry, goalMaterial);
-            goal.position.set(x, 1, z);
+            goal.position.set(x, 1.25, z);
             goal.castShadow = true;
             scene.add(goal);
             
             // Cột dọc
-            const postGeometry = new THREE.CylinderGeometry(0.1, 0.1, 2.5);
+            const postGeometry = new THREE.CylinderGeometry(0.15, 0.15, 3, 16);
             const postMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
             
             // 2 cột dọc
             const leftPost = new THREE.Mesh(postGeometry, postMaterial);
-            leftPost.position.set(x, 1.25, z - 1.25);
+            leftPost.position.set(x, 1.5, z - 1);
             scene.add(leftPost);
             
             const rightPost = new THREE.Mesh(postGeometry, postMaterial);
-            rightPost.position.set(x, 1.25, z + 1.25);
+            rightPost.position.set(x, 1.5, z + 1);
             scene.add(rightPost);
             
             // Xà ngang
-            const crossbarGeometry = new THREE.BoxGeometry(0.2, 0.2, 2.5);
+            const crossbarGeometry = new THREE.BoxGeometry(0.3, 0.3, 2);
             const crossbar = new THREE.Mesh(crossbarGeometry, postMaterial);
-            crossbar.position.set(x, 2.25, z);
+            crossbar.position.set(x, 3, z);
             scene.add(crossbar);
             
             // Vật lý cho khung thành
-            const goalShape = new CANNON.Box(new CANNON.Vec3(1.5, 1, 0.75));
+            const goalShape = new CANNON.Box(new CANNON.Vec3(1.5, 1.25, 1));
             const goalBody = new CANNON.Body({ mass: 0 });
             goalBody.addShape(goalShape);
-            goalBody.position.set(x, 1, z);
+            goalBody.position.set(x, 1.25, z);
             world.addBody(goalBody);
             
             return { goal, goalBody };
         }
 
-        // Khung thành của bạn (màu xanh)
-        const yourGoal = createGoal(-20, 0, 0x0000FF);
-        // Khung thành của bot (màu đỏ)
-        const botGoal = createGoal(20, 0, 0xFF0000);
+        // Khung thành Team A (màu xanh)
+        const teamAGoal = createGoal(-pitchWidth/2, 0, 0x0000FF);
+        // Khung thành Team B (màu đỏ)
+        const teamBGoal = createGoal(pitchWidth/2, 0, 0xFF0000);
 
         // Tạo bóng
         const ballGeometry = new THREE.SphereGeometry(0.5, 32, 32);
@@ -164,39 +173,71 @@
         ballBody.angularDamping = 0.4;
         world.addBody(ballBody);
 
-        // Tạo cầu thủ của bạn (màu xanh)
-        const playerGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1.8, 16);
-        const playerMaterial = new THREE.MeshStandardMaterial({ color: 0x0000FF });
-        const player = new THREE.Mesh(playerGeometry, playerMaterial);
-        player.position.set(0, 0.9, 0);
-        player.castShadow = true;
-        scene.add(player);
+        // Tạo cầu thủ
+        function createPlayer(x, z, color, team) {
+            const playerGeometry = new THREE.CylinderGeometry(0.4, 0.4, 1.5, 16);
+            const playerMaterial = new THREE.MeshStandardMaterial({ color: color });
+            const player = new THREE.Mesh(playerGeometry, playerMaterial);
+            player.position.set(x, 0.75, z);
+            player.castShadow = true;
+            scene.add(player);
 
-        // Vật lý cho cầu thủ của bạn
-        const playerShape = new CANNON.Cylinder(0.5, 0.5, 1.8, 16);
-        const playerBody = new CANNON.Body({ mass: 5 });
-        playerBody.addShape(playerShape);
-        playerBody.position.set(0, 0.9, 0);
-        playerBody.linearDamping = 0.5;
-        playerBody.angularDamping = 0.5;
-        world.addBody(playerBody);
+            // Vật lý cho cầu thủ
+            const playerShape = new CANNON.Cylinder(0.4, 0.4, 1.5, 16);
+            const playerBody = new CANNON.Body({ mass: 5 });
+            playerBody.addShape(playerShape);
+            playerBody.position.set(x, 0.75, z);
+            playerBody.linearDamping = 0.5;
+            playerBody.angularDamping = 0.5;
+            playerBody.team = team; // Thêm thuộc tính team
+            world.addBody(playerBody);
+            
+            return { player, playerBody };
+        }
 
-        // Tạo bot (màu đỏ)
-        const botGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1.8, 16);
-        const botMaterial = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
-        const bot = new THREE.Mesh(botGeometry, botMaterial);
-        bot.position.set(10, 0.9, 0);
-        bot.castShadow = true;
-        scene.add(bot);
+        // Tạo đội hình 4-4-2 cho cả 2 đội
+        const teamAPlayers = [];
+        const teamBPlayers = [];
+        
+        // Team A (Blue - playing from left to right)
+        // Goalkeeper
+        teamAPlayers.push(createPlayer(-pitchWidth/2 + 3, 0, 0x0000FF, 'A'));
+        
+        // Defenders (4)
+        teamAPlayers.push(createPlayer(-pitchWidth/2 + 10, -8, 0x0000FF, 'A'));
+        teamAPlayers.push(createPlayer(-pitchWidth/2 + 10, 8, 0x0000FF, 'A'));
+        teamAPlayers.push(createPlayer(-pitchWidth/2 + 10, -4, 0x0000FF, 'A'));
+        teamAPlayers.push(createPlayer(-pitchWidth/2 + 10, 4, 0x0000FF, 'A'));
+        
+        // Midfielders (4)
+        teamAPlayers.push(createPlayer(-pitchWidth/4, -10, 0x0000FF, 'A'));
+        teamAPlayers.push(createPlayer(-pitchWidth/4, 10, 0x0000FF, 'A'));
+        teamAPlayers.push(createPlayer(-pitchWidth/4, -5, 0x0000FF, 'A'));
+        teamAPlayers.push(createPlayer(-pitchWidth/4, 5, 0x0000FF, 'A'));
+        
+        // Forwards (2)
+        teamAPlayers.push(createPlayer(-5, -3, 0x0000FF, 'A'));
+        teamAPlayers.push(createPlayer(-5, 3, 0x0000FF, 'A'));
 
-        // Vật lý cho bot
-        const botShape = new CANNON.Cylinder(0.5, 0.5, 1.8, 16);
-        const botBody = new CANNON.Body({ mass: 5 });
-        botBody.addShape(botShape);
-        botBody.position.set(10, 0.9, 0);
-        botBody.linearDamping = 0.5;
-        botBody.angularDamping = 0.5;
-        world.addBody(botBody);
+        // Team B (Red - playing from right to left)
+        // Goalkeeper
+        teamBPlayers.push(createPlayer(pitchWidth/2 - 3, 0, 0xFF0000, 'B'));
+        
+        // Defenders (4)
+        teamBPlayers.push(createPlayer(pitchWidth/2 - 10, -8, 0xFF0000, 'B'));
+        teamBPlayers.push(createPlayer(pitchWidth/2 - 10, 8, 0xFF0000, 'B'));
+        teamBPlayers.push(createPlayer(pitchWidth/2 - 10, -4, 0xFF0000, 'B'));
+        teamBPlayers.push(createPlayer(pitchWidth/2 - 10, 4, 0xFF0000, 'B'));
+        
+        // Midfielders (4)
+        teamBPlayers.push(createPlayer(pitchWidth/4, -10, 0xFF0000, 'B'));
+        teamBPlayers.push(createPlayer(pitchWidth/4, 10, 0xFF0000, 'B'));
+        teamBPlayers.push(createPlayer(pitchWidth/4, -5, 0xFF0000, 'B'));
+        teamBPlayers.push(createPlayer(pitchWidth/4, 5, 0xFF0000, 'B'));
+        
+        // Forwards (2)
+        teamBPlayers.push(createPlayer(5, -3, 0xFF0000, 'B'));
+        teamBPlayers.push(createPlayer(5, 3, 0xFF0000, 'B'));
 
         // Ánh sáng
         const ambientLight = new THREE.AmbientLight(0x404040);
@@ -210,7 +251,7 @@
         scene.add(directionalLight);
 
         // Đặt camera
-        camera.position.set(0, 15, 20);
+        camera.position.set(0, 40, 40);
         camera.lookAt(0, 0, 0);
 
         // Điều khiển
@@ -222,53 +263,219 @@
             if (event.code === 'KeyR') {
                 resetGame();
             }
-        });
-        document.addEventListener('keyup', (event) => {
-            keys[event.code] = false;
+            
+            // Pause game
+            if (event.code === 'KeyP') {
+                paused = !paused;
+            }
         });
 
         // Biến điểm
-        let yourScore = 0;
-        let botScore = 0;
+        let teamAScore = 0;
+        let teamBScore = 0;
         const scoreElement = document.getElementById('score');
+        let paused = false;
 
-        // AI cho bot
-        function updateBot() {
-            // Tính khoảng cách giữa bot và bóng
+        // AI cho các cầu thủ
+        function updatePlayersAI() {
             const ballPos = ballBody.position;
-            const botPos = botBody.position;
             
-            // Vector hướng từ bot đến bóng
-            const direction = new CANNON.Vec3();
-            direction.set(ballPos.x - botPos.x, 0, ballPos.z - botPos.z);
-            direction.normalize();
-            
-            // Nếu bóng ở phía bên kia sân (gần khung thành của bot)
-            if (ballPos.x > 0) {
-                // Bot sẽ đuổi theo bóng
-                const speed = 5;
-                botBody.velocity.x = direction.x * speed;
-                botBody.velocity.z = direction.z * speed;
+            // Cập nhật AI cho Team A
+            teamAPlayers.forEach((playerObj, index) => {
+                const playerBody = playerObj.playerBody;
+                const playerPos = playerBody.position;
                 
-                // Nếu bot gần bóng thì sút
-                const distance = botPos.distanceTo(ballPos);
-                if (distance < 3) {
-                    const kickDirection = new CANNON.Vec3(-1, 0.2, (Math.random() - 0.5) * 0.5);
-                    kickDirection.normalize();
-                    kickDirection.scale(20, kickDirection);
-                    ballBody.velocity.copy(kickDirection);
+                // Mục tiêu mặc định là vị trí đội hình
+                let targetPos = new CANNON.Vec3();
+                
+                // Thủ môn
+                if (index === 0) {
+                    // Thủ môn di chuyển theo bóng nhưng giữ khoảng cách với khung thành
+                    targetPos.set(
+                        -pitchWidth/2 + 3,
+                        0.75,
+                        ballPos.z * 0.3 // Di chuyển theo bóng nhưng không quá xa
+                    );
+                    
+                    // Nếu bóng gần thì cố gắng cản phá
+                    if (playerPos.distanceTo(ballPos) < 5 && ballPos.x < -pitchWidth/2 + 10) {
+                        const direction = new CANNON.Vec3();
+                        direction.set(ballPos.x - playerPos.x, 0, ballPos.z - playerPos.z);
+                        direction.normalize();
+                        playerBody.velocity.x = direction.x * 8;
+                        playerBody.velocity.z = direction.z * 8;
+                        
+                        // Nếu đủ gần thì đẩy bóng ra
+                        if (playerPos.distanceTo(ballPos) < 2) {
+                            const kickDirection = new CANNON.Vec3(1, 0.2, (Math.random() - 0.5) * 0.5);
+                            kickDirection.normalize();
+                            kickDirection.scale(15, kickDirection);
+                            ballBody.velocity.copy(kickDirection);
+                        }
+                        return;
+                    }
                 }
-            } else {
-                // Nếu bóng ở phía sân của bạn, bot sẽ lui về phòng thủ
-                const homePos = new CANNON.Vec3(10, 0.9, 0);
-                const homeDirection = new CANNON.Vec3();
-                homeDirection.set(homePos.x - botPos.x, 0, homePos.z - botPos.z);
-                homeDirection.normalize();
+                // Hậu vệ
+                else if (index < 5) {
+                    // Hậu vệ phòng thủ khu vực của mình
+                    const baseX = -pitchWidth/2 + 10;
+                    const baseZ = [-8, 8, -4, 4][index - 1];
+                    
+                    // Nếu bóng ở phía sân nhà thì áp sát
+                    if (ballPos.x < 0) {
+                        // Tính vị trí giữa bóng và vị trí phòng ngự
+                        targetPos.set(
+                            baseX + (ballPos.x - baseX) * 0.5,
+                            0.75,
+                            baseZ + (ballPos.z - baseZ) * 0.5
+                        );
+                    } else {
+                        // Lui về vị trí phòng ngự
+                        targetPos.set(baseX, 0.75, baseZ);
+                    }
+                }
+                // Tiền vệ
+                else if (index < 9) {
+                    // Tiền vệ di chuyển theo bóng nhưng giữ vị trí tương đối
+                    const baseX = -pitchWidth/4;
+                    const baseZ = [-10, 10, -5, 5][index - 5];
+                    
+                    targetPos.set(
+                        baseX + (ballPos.x - baseX) * 0.3,
+                        0.75,
+                        baseZ + (ballPos.z - baseZ) * 0.3
+                    );
+                }
+                // Tiền đạo
+                else {
+                    // Tiền đạo tấn công khi bóng ở phía đối phương
+                    if (ballPos.x > 0) {
+                        targetPos.set(
+                            ballPos.x * 0.7,
+                            0.75,
+                            ballPos.z * 0.7
+                        );
+                    } else {
+                        // Lui về vị trí đợi bóng
+                        targetPos.set(-5, 0.75, [-3, 3][index - 9]);
+                    }
+                }
                 
-                const speed = 3;
-                botBody.velocity.x = homeDirection.x * speed;
-                botBody.velocity.z = homeDirection.z * speed;
-            }
+                // Di chuyển đến vị trí mục tiêu
+                const direction = new CANNON.Vec3();
+                direction.set(targetPos.x - playerPos.x, 0, targetPos.z - playerPos.z);
+                direction.normalize();
+                
+                const speed = index === 0 ? 5 : 4; // Thủ môn di chuyển nhanh hơn
+                playerBody.velocity.x = direction.x * speed;
+                playerBody.velocity.z = direction.z * speed;
+                
+                // Nếu gần bóng thì sút hoặc tranh bóng
+                if (playerPos.distanceTo(ballPos) < 2) {
+                    if (Math.random() < 0.1) { // 10% cơ hội sút bóng
+                        const kickDirection = new CANNON.Vec3(
+                            1 + (Math.random() - 0.5) * 0.3,
+                            0.2,
+                            (Math.random() - 0.5) * 0.5
+                        );
+                        kickDirection.normalize();
+                        kickDirection.scale(15 + Math.random() * 10, kickDirection);
+                        ballBody.velocity.copy(kickDirection);
+                    }
+                }
+            });
+            
+            // Cập nhật AI cho Team B (tương tự nhưng ngược lại)
+            teamBPlayers.forEach((playerObj, index) => {
+                const playerBody = playerObj.playerBody;
+                const playerPos = playerBody.position;
+                
+                let targetPos = new CANNON.Vec3();
+                
+                // Thủ môn
+                if (index === 0) {
+                    targetPos.set(
+                        pitchWidth/2 - 3,
+                        0.75,
+                        ballPos.z * 0.3
+                    );
+                    
+                    if (playerPos.distanceTo(ballPos) < 5 && ballPos.x > pitchWidth/2 - 10) {
+                        const direction = new CANNON.Vec3();
+                        direction.set(ballPos.x - playerPos.x, 0, ballPos.z - playerPos.z);
+                        direction.normalize();
+                        playerBody.velocity.x = direction.x * 8;
+                        playerBody.velocity.z = direction.z * 8;
+                        
+                        if (playerPos.distanceTo(ballPos) < 2) {
+                            const kickDirection = new CANNON.Vec3(-1, 0.2, (Math.random() - 0.5) * 0.5);
+                            kickDirection.normalize();
+                            kickDirection.scale(15, kickDirection);
+                            ballBody.velocity.copy(kickDirection);
+                        }
+                        return;
+                    }
+                }
+                // Hậu vệ
+                else if (index < 5) {
+                    const baseX = pitchWidth/2 - 10;
+                    const baseZ = [-8, 8, -4, 4][index - 1];
+                    
+                    if (ballPos.x > 0) {
+                        targetPos.set(
+                            baseX + (ballPos.x - baseX) * 0.5,
+                            0.75,
+                            baseZ + (ballPos.z - baseZ) * 0.5
+                        );
+                    } else {
+                        targetPos.set(baseX, 0.75, baseZ);
+                    }
+                }
+                // Tiền vệ
+                else if (index < 9) {
+                    const baseX = pitchWidth/4;
+                    const baseZ = [-10, 10, -5, 5][index - 5];
+                    
+                    targetPos.set(
+                        baseX + (ballPos.x - baseX) * 0.3,
+                        0.75,
+                        baseZ + (ballPos.z - baseZ) * 0.3
+                    );
+                }
+                // Tiền đạo
+                else {
+                    if (ballPos.x < 0) {
+                        targetPos.set(
+                            ballPos.x * 0.7,
+                            0.75,
+                            ballPos.z * 0.7
+                        );
+                    } else {
+                        targetPos.set(5, 0.75, [-3, 3][index - 9]);
+                    }
+                }
+                
+                const direction = new CANNON.Vec3();
+                direction.set(targetPos.x - playerPos.x, 0, targetPos.z - playerPos.z);
+                direction.normalize();
+                
+                const speed = index === 0 ? 5 : 4;
+                playerBody.velocity.x = direction.x * speed;
+                playerBody.velocity.z = direction.z * speed;
+                
+                if (playerPos.distanceTo(ballPos) < 2) {
+                    if (Math.random() < 0.1) {
+                        const kickDirection = new CANNON.Vec3(
+                            -1 + (Math.random() - 0.5) * 0.3,
+                            0.2,
+                            (Math.random() - 0.5) * 0.5
+                        );
+                        kickDirection.normalize();
+                        kickDirection.scale(15 + Math.random() * 10, kickDirection);
+                        ballBody.velocity.copy(kickDirection);
+                    }
+                }
+            });
         }
 
         // Reset bóng về vị trí trung tâm
@@ -276,26 +483,78 @@
             ballBody.position.set(0, 2, 0);
             ballBody.velocity.set(0, 0, 0);
             ballBody.angularVelocity.set(0, 0, 0);
-            
-            playerBody.position.set(0, 0.9, 0);
-            playerBody.velocity.set(0, 0, 0);
-            
-            botBody.position.set(10, 0.9, 0);
-            botBody.velocity.set(0, 0, 0);
         }
 
         // Reset toàn bộ game
         function resetGame() {
-            yourScore = 0;
-            botScore = 0;
-            scoreElement.textContent = `Bạn: ${yourScore} - Bot: ${botScore}`;
+            teamAScore = 0;
+            teamBScore = 0;
+            scoreElement.textContent = `Team A: ${teamAScore} - Team B: ${teamBScore}`;
             resetBall();
+            
+            // Reset vị trí cầu thủ Team A
+            teamAPlayers.forEach((playerObj, index) => {
+                const playerBody = playerObj.playerBody;
+                
+                // Goalkeeper
+                if (index === 0) {
+                    playerBody.position.set(-pitchWidth/2 + 3, 0.75, 0);
+                }
+                // Defenders (4)
+                else if (index < 5) {
+                    const zPos = [-8, 8, -4, 4][index - 1];
+                    playerBody.position.set(-pitchWidth/2 + 10, 0.75, zPos);
+                }
+                // Midfielders (4)
+                else if (index < 9) {
+                    const zPos = [-10, 10, -5, 5][index - 5];
+                    playerBody.position.set(-pitchWidth/4, 0.75, zPos);
+                }
+                // Forwards (2)
+                else {
+                    const zPos = [-3, 3][index - 9];
+                    playerBody.position.set(-5, 0.75, zPos);
+                }
+                
+                playerBody.velocity.set(0, 0, 0);
+                playerBody.angularVelocity.set(0, 0, 0);
+            });
+            
+            // Reset vị trí cầu thủ Team B
+            teamBPlayers.forEach((playerObj, index) => {
+                const playerBody = playerObj.playerBody;
+                
+                // Goalkeeper
+                if (index === 0) {
+                    playerBody.position.set(pitchWidth/2 - 3, 0.75, 0);
+                }
+                // Defenders (4)
+                else if (index < 5) {
+                    const zPos = [-8, 8, -4, 4][index - 1];
+                    playerBody.position.set(pitchWidth/2 - 10, 0.75, zPos);
+                }
+                // Midfielders (4)
+                else if (index < 9) {
+                    const zPos = [-10, 10, -5, 5][index - 5];
+                    playerBody.position.set(pitchWidth/4, 0.75, zPos);
+                }
+                // Forwards (2)
+                else {
+                    const zPos = [-3, 3][index - 9];
+                    playerBody.position.set(5, 0.75, zPos);
+                }
+                
+                playerBody.velocity.set(0, 0, 0);
+                playerBody.angularVelocity.set(0, 0, 0);
+            });
         }
 
         // Vòng lặp game
         const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate);
+            
+            if (paused) return;
             
             const delta = clock.getDelta();
             world.step(delta);
@@ -304,74 +563,35 @@
             ball.position.copy(ballBody.position);
             ball.quaternion.copy(ballBody.quaternion);
             
-            player.position.copy(playerBody.position);
-            player.quaternion.copy(playerBody.quaternion);
+            teamAPlayers.forEach(playerObj => {
+                playerObj.player.position.copy(playerObj.playerBody.position);
+                playerObj.player.quaternion.copy(playerObj.playerBody.quaternion);
+            });
             
-            bot.position.copy(botBody.position);
-            bot.quaternion.copy(botBody.quaternion);
+            teamBPlayers.forEach(playerObj => {
+                playerObj.player.position.copy(playerObj.playerBody.position);
+                playerObj.player.quaternion.copy(playerObj.playerBody.quaternion);
+            });
             
-            // Điều khiển cầu thủ của bạn
-            const speed = 7;
-            if (keys['ArrowUp']) {
-                playerBody.velocity.z = -speed;
-            } else if (keys['ArrowDown']) {
-                playerBody.velocity.z = speed;
-            } else {
-                playerBody.velocity.z = 0;
-            }
-            
-            if (keys['ArrowLeft']) {
-                playerBody.velocity.x = -speed;
-            } else if (keys['ArrowRight']) {
-                playerBody.velocity.x = speed;
-            } else {
-                playerBody.velocity.x = 0;
-            }
-            
-            if (keys['Space']) {
-                // Sút bóng nếu gần bóng
-                const distance = playerBody.position.distanceTo(ballBody.position);
-                if (distance < 2) {
-                    const direction = new CANNON.Vec3();
-                    direction.copy(ballBody.position);
-                    direction.vsub(playerBody.position, direction);
-                    direction.normalize();
-                    direction.scale(20, direction);
-                    ballBody.velocity.copy(direction);
-                }
-            }
-            
-            // Cập nhật AI cho bot
-            updateBot();
+            // Cập nhật AI cho các cầu thủ
+            updatePlayersAI();
             
             // Kiểm tra ghi bàn
             const ballPos = ballBody.position;
             
-            // Bạn ghi bàn (bóng vào khung thành bot)
-            if (ballPos.x > 19 && ballPos.z > -1.5 && ballPos.z < 1.5) {
-                yourScore++;
-                scoreElement.textContent = `Bạn: ${yourScore} - Bot: ${botScore}`;
+            // Team A ghi bàn (bóng vào khung thành Team B)
+            if (ballPos.x > pitchWidth/2 - 1.5 && ballPos.z > -1 && ballPos.z < 1) {
+                teamAScore++;
+                scoreElement.textContent = `Team A: ${teamAScore} - Team B: ${teamBScore}`;
                 resetBall();
             }
             
-            // Bot ghi bàn (bóng vào khung thành của bạn)
-            if (ballPos.x < -19 && ballPos.z > -1.5 && ballPos.z < 1.5) {
-                botScore++;
-                scoreElement.textContent = `Bạn: ${yourScore} - Bot: ${botScore}`;
+            // Team B ghi bàn (bóng vào khung thành Team A)
+            if (ballPos.x < -pitchWidth/2 + 1.5 && ballPos.z > -1 && ballPos.z < 1) {
+                teamBScore++;
+                scoreElement.textContent = `Team A: ${teamAScore} - Team B: ${teamBScore}`;
                 resetBall();
             }
-            
-            // Giới hạn di chuyển cho cầu thủ
-            if (playerBody.position.x < -18) playerBody.position.x = -18;
-            if (playerBody.position.x > 18) playerBody.position.x = 18;
-            if (playerBody.position.z < -10) playerBody.position.z = -10;
-            if (playerBody.position.z > 10) playerBody.position.z = 10;
-            
-            // Giới hạn di chuyển cho bot
-            if (botBody.position.x < 0) botBody.position.x = 0;
-            if (botBody.position.x > 18) botBody.position.x = 18;
-            if (botBody.position.z < -10) botBody.position.z = -10;
-            if (botBody.position.z > 10) botBody.position.z = 10;
             
             renderer.render(scene, camera);
         }
@@ -383,6 +603,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
+        resetGame();
         animate();
     </script>
 </body>
