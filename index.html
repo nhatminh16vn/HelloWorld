@@ -1,117 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Hiragana Di Chuyển</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-        }
-        
-        #hiragana {
-            position: absolute;
-            font-size: 200px;
-            font-weight: bold;
-            color: #e74c3c;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-            user-select: none;
-            transition: all 1s ease-out;
-        }
-        
-        #info {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-    </style>
+    <title>Game Bóng Đá Mini</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="hiragana">あ</div>
-    <div id="info">Chữ Hiragana sẽ thay đổi sau: <span id="countdown">10</span>s</div>
+    <div class="game-container">
+        <h1>Game Bóng Đá Mini</h1>
+        <div class="field">
+            <div class="goal left-goal"></div>
+            <div class="goal right-goal"></div>
+            <div class="player" id="player"></div>
+            <div class="ball" id="ball"></div>
+            <div class="scoreboard">
+                <span id="player-score">0</span> - <span id="computer-score">0</span>
+            </div>
+        </div>
+        <div class="controls">
+            <p>Sử dụng phím mũi tên để di chuyển, phím Space để sút bóng</p>
+            <button id="reset-btn">Chơi Lại</button>
+        </div>
+    </div>
 
-    <script>
-        // Danh sách các chữ Hiragana cơ bản
-        const hiraganaList = [
-            'あ', 'い', 'う', 'え', 'お',
-            'か', 'き', 'く', 'け', 'こ',
-            'さ', 'し', 'す', 'せ', 'そ',
-            'た', 'ち', 'つ', 'て', 'と',
-            'な', 'に', 'ぬ', 'ね', 'の',
-            'は', 'ひ', 'ふ', 'へ', 'ほ',
-            'ま', 'み', 'む', 'め', 'も',
-            'や', 'ゆ', 'よ',
-            'ら', 'り', 'る', 'れ', 'ろ',
-            'わ', 'を', 'ん'
-        ];
-
-        const hiraganaElement = document.getElementById('hiragana');
-        const countdownElement = document.getElementById('countdown');
-        
-        let countdown = 10;
-        let screenWidth = window.innerWidth;
-        let screenHeight = window.innerHeight;
-        
-        // Hàm chọn ngẫu nhiên một chữ Hiragana
-        function getRandomHiragana() {
-            const randomIndex = Math.floor(Math.random() * hiraganaList.length);
-            return hiraganaList[randomIndex];
-        }
-        
-        // Hàm di chuyển chữ Hiragana đến vị trí ngẫu nhiên
-        function moveRandomly() {
-            const maxX = screenWidth - 100;
-            const maxY = screenHeight - 100;
-            
-            const randomX = Math.floor(Math.random() * maxX);
-            const randomY = Math.floor(Math.random() * maxY);
-            
-            hiraganaElement.style.left = randomX + 'px';
-            hiraganaElement.style.top = randomY + 'px';
-            
-            // Di chuyển lại sau 2-5 giây
-            setTimeout(moveRandomly, 2000 + Math.random() * 3000);
-        }
-        
-        // Hàm thay đổi chữ Hiragana
-        function changeHiragana() {
-            hiraganaElement.textContent = getRandomHiragana();
-            countdown = 10;
-            updateCountdown();
-        }
-        
-        // Hàm cập nhật đồng hồ đếm ngược
-        function updateCountdown() {
-            countdownElement.textContent = countdown;
-            
-            if (countdown <= 0) {
-                changeHiragana();
-            } else {
-                countdown--;
-                setTimeout(updateCountdown, 1000);
-            }
-        }
-        
-        // Xử lý thay đổi kích thước màn hình
-        window.addEventListener('resize', () => {
-            screenWidth = window.innerWidth;
-            screenHeight = window.innerHeight;
-        });
-        
-        // Bắt đầu game
-        moveRandomly();
-        updateCountdown();
-        
-        // Thay đổi chữ Hiragana ban đầu
-        changeHiragana();
-    </script>
+    <script src="game.js"></script>
 </body>
 </html>
