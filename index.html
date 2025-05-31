@@ -3,272 +3,533 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Bóng Đá Mini</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Game Ném Bóng</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            overflow: hidden;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        header {
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .instructions {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 30px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 10px;
+            line-height: 1.6;
+        }
+        
+        .game-area {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        #ball {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle at 30% 30%, #ff7e5f, #e74c3c);
+            border-radius: 50%;
+            cursor: grab;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            left: 150px;
+            bottom: 100px;
+            transition: transform 0.2s;
+        }
+        
+        #ball:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+        }
+        
+        .target {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: rgba(46, 204, 113, 0.3);
+            border: 3px dashed #2ecc71;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            right: 200px;
+            bottom: 150px;
+            animation: pulse 2s infinite;
+        }
+        
+        .target::after {
+            content: "🎯";
+            font-size: 40px;
+            filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5));
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-box {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px 30px;
+            border-radius: 15px;
+            min-width: 150px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            color: white;
+            border: none;
+            padding: 15px 35px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .power-indicator {
+            position: absolute;
+            height: 8px;
+            background: linear-gradient(to right, #00b09b, #96c93d);
+            border-radius: 4px;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            box-shadow: 0 0 10px rgba(150, 201, 61, 0.5);
+        }
+        
+        .trail {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: rgba(255, 215, 0, 0.7);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ffd700;
+            display: none;
+            z-index: 20;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .game-area {
+                height: 400px;
+            }
+            
+            .stat-box {
+                padding: 10px 20px;
+                min-width: 120px;
+            }
+            
+            .stat-value {
+                font-size: 2rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="game-container">
-        <h1>Game Bóng Đá Mini</h1>
-        <div class="field">
-            <div class="goal left-goal"></div>
-            <div class="goal right-goal"></div>
-            <div class="player" id="player"></div>
-            <div class="ball" id="ball"></div>
-            <div class="scoreboard">
-                <span id="player-score">0</span> - <span id="computer-score">0</span>
+    <div class="container">
+        <header>
+            <h1>GAME NÉM BÓNG</h1>
+            <p class="instructions">Kéo và thả quả bóng để ném vào mục tiêu. Càng gần tâm mục tiêu, điểm càng cao!</p>
+        </header>
+        
+        <div class="game-area">
+            <div id="ball"></div>
+            <div class="target"></div>
+            <div class="power-indicator" id="powerIndicator"></div>
+            <div class="message" id="message">TRÚNG MỤC TIÊU!</div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <div>LẦN NÉM</div>
+                <div class="stat-value" id="throwCount">0</div>
+            </div>
+            <div class="stat-box">
+                <div>ĐIỂM CAO</div>
+                <div class="stat-value" id="highScore">0</div>
+            </div>
+            <div class="stat-box">
+                <div>ĐIỂM HIỆN TẠI</div>
+                <div class="stat-value" id="currentScore">0</div>
             </div>
         </div>
+        
         <div class="controls">
-            <p>Sử dụng phím mũi tên để di chuyển, phím Space để sút bóng</p>
-            <button id="reset-btn">Chơi Lại</button>
+            <button id="resetBtn">NÉM LẠI</button>
+            <button id="newGameBtn">GAME MỚI</button>
         </div>
     </div>
 
-    <script src="game.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const ball = document.getElementById('ball');
+            const target = document.querySelector('.target');
+            const powerIndicator = document.getElementById('powerIndicator');
+            const throwCountElement = document.getElementById('throwCount');
+            const highScoreElement = document.getElementById('highScore');
+            const currentScoreElement = document.getElementById('currentScore');
+            const resetBtn = document.getElementById('resetBtn');
+            const newGameBtn = document.getElementById('newGameBtn');
+            const message = document.getElementById('message');
+            
+            let throwCount = 0;
+            let currentScore = 0;
+            let highScore = 0;
+            let isDragging = false;
+            let startX, startY;
+            let throwPower = 0;
+            let throwAngle = 0;
+            let ballX = 150, ballY = 450;
+            let trailTimer;
+            
+            // Cập nhật vị trí bóng
+            function updateBallPosition() {
+                ball.style.left = `${ballX}px`;
+                ball.style.bottom = `${ballY}px`;
+            }
+            
+            // Khởi tạo game
+            function initGame() {
+                throwCount = 0;
+                currentScore = 0;
+                updateStats();
+                resetBall();
+            }
+            
+            // Reset bóng về vị trí ban đầu
+            function resetBall() {
+                ballX = 150;
+                ballY = 100;
+                updateBallPosition();
+                ball.style.display = 'block';
+                isDragging = false;
+                powerIndicator.style.display = 'none';
+            }
+            
+            // Cập nhật thống kê
+            function updateStats() {
+                throwCountElement.textContent = throwCount;
+                currentScoreElement.textContent = currentScore;
+                highScoreElement.textContent = highScore;
+            }
+            
+            // Hiển thị thông báo
+            function showMessage(text) {
+                message.textContent = text;
+                message.style.display = 'block';
+                
+                setTimeout(() => {
+                    message.style.display = 'none';
+                }, 2000);
+            }
+            
+            // Tạo vệt khi bóng di chuyển
+            function createTrail(x, y) {
+                const trail = document.createElement('div');
+                trail.className = 'trail';
+                trail.style.left = `${x}px`;
+                trail.style.bottom = `${y}px`;
+                document.querySelector('.game-area').appendChild(trail);
+                
+                setTimeout(() => {
+                    trail.style.opacity = '0';
+                    trail.style.transform = 'scale(0.5)';
+                    setTimeout(() => {
+                        trail.remove();
+                    }, 500);
+                }, 100);
+            }
+            
+            // Xử lý bắt đầu kéo
+            ball.addEventListener('mousedown', startDrag);
+            ball.addEventListener('touchstart', startDrag, {passive: false});
+            
+            function startDrag(e) {
+                e.preventDefault();
+                isDragging = true;
+                
+                if (e.type === 'mousedown') {
+                    startX = e.clientX;
+                    startY = e.clientY;
+                } else if (e.type === 'touchstart') {
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                }
+                
+                // Hiển thị chỉ số lực ném
+                powerIndicator.style.display = 'block';
+                powerIndicator.style.width = '0px';
+            }
+            
+            // Xử lý khi đang kéo
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', drag, {passive: false});
+            
+            function drag(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                
+                let currentX, currentY;
+                if (e.type === 'mousemove') {
+                    currentX = e.clientX;
+                    currentY = e.clientY;
+                } else if (e.type === 'touchmove') {
+                    currentX = e.touches[0].clientX;
+                    currentY = e.touches[0].clientY;
+                }
+                
+                // Tính khoảng cách kéo
+                const dx = startX - currentX;
+                const dy = startY - currentY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Giới hạn khoảng cách kéo
+                const maxDistance = 200;
+                const limitedDistance = Math.min(distance, maxDistance);
+                
+                // Tính toán lực ném (0-100)
+                throwPower = Math.round((limitedDistance / maxDistance) * 100);
+                
+                // Tính góc ném
+                throwAngle = Math.atan2(dy, dx);
+                
+                // Cập nhật chỉ số lực ném
+                powerIndicator.style.width = `${limitedDistance}px`;
+                
+                // Di chuyển bóng theo chuột
+                ballX = 150 - (dx / 5);
+                ballY = 100 - (dy / 5);
+                updateBallPosition();
+            }
+            
+            // Xử lý khi thả bóng
+            document.addEventListener('mouseup', release);
+            document.addEventListener('touchend', release);
+            
+            function release() {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                throwCount++;
+                powerIndicator.style.display = 'none';
+                
+                // Tính toán vận tốc dựa trên lực ném
+                const velocity = throwPower / 8;
+                const vx = Math.cos(throwAngle) * velocity;
+                const vy = Math.sin(throwAngle) * velocity;
+                
+                // Bắt đầu animation ném bóng
+                throwBall(vx, vy);
+            }
+            
+            // Animation ném bóng
+            function throwBall(vx, vy) {
+                // Xóa bất kỳ trail nào trước đó
+                clearTimeout(trailTimer);
+                
+                const gravity = 0.2;
+                let x = ballX;
+                let y = ballY;
+                
+                function animate() {
+                    // Cập nhật vị trí
+                    x += vx;
+                    y += vy;
+                    vy += gravity;
+                    
+                    // Tạo vệt
+                    if (throwCount % 2 === 0) {
+                        createTrail(x, y);
+                    }
+                    
+                    // Cập nhật vị trí bóng
+                    ball.style.left = `${x}px`;
+                    ball.style.bottom = `${y}px`;
+                    
+                    // Kiểm tra va chạm với biên
+                    if (x < 0 || x > 850 || y > 500) {
+                        checkScore(x, y);
+                        return;
+                    }
+                    
+                    // Kiểm tra va chạm với mục tiêu
+                    const targetRect = target.getBoundingClientRect();
+                    const ballRect = ball.getBoundingClientRect();
+                    
+                    if (
+                        ballRect.right > targetRect.left &&
+                        ballRect.left < targetRect.right &&
+                        ballRect.bottom > targetRect.top &&
+                        ballRect.top < targetRect.bottom
+                    ) {
+                        calculateScore(ballRect, targetRect);
+                        return;
+                    }
+                    
+                    // Tiếp tục animation
+                    requestAnimationFrame(animate);
+                }
+                
+                animate();
+            }
+            
+            // Tính điểm khi bóng chạm mục tiêu
+            function calculateScore(ballRect, targetRect) {
+                const targetCenterX = targetRect.left + targetRect.width / 2;
+                const targetCenterY = targetRect.top + targetRect.height / 2;
+                
+                const ballCenterX = ballRect.left + ballRect.width / 2;
+                const ballCenterY = ballRect.top + ballRect.height / 2;
+                
+                const dx = ballCenterX - targetCenterX;
+                const dy = ballCenterY - targetCenterY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Tính điểm dựa trên khoảng cách đến tâm
+                let score;
+                if (distance < 20) {
+                    score = 100;
+                    showMessage("TUYỆT VỜI! 100 ĐIỂM");
+                } else if (distance < 40) {
+                    score = 75;
+                    showMessage("XUẤT SẮC! 75 ĐIỂM");
+                } else if (distance < 60) {
+                    score = 50;
+                    showMessage("TỐT! 50 ĐIỂM");
+                } else {
+                    score = 25;
+                    showMessage("KHÁ! 25 ĐIỂM");
+                }
+                
+                currentScore += score;
+                if (currentScore > highScore) {
+                    highScore = currentScore;
+                }
+                updateStats();
+                
+                // Ẩn bóng tạm thời
+                setTimeout(() => {
+                    ball.style.display = 'none';
+                }, 500);
+            }
+            
+            // Xử lý khi bóng ra ngoài màn hình
+            function checkScore(x, y) {
+                showMessage("HỤT RỒI!");
+                
+                // Reset bóng sau 1 giây
+                setTimeout(() => {
+                    resetBall();
+                }, 1000);
+            }
+            
+            // Sự kiện nút
+            resetBtn.addEventListener('click', resetBall);
+            newGameBtn.addEventListener('click', initGame);
+            
+            // Khởi động game
+            initGame();
+        });
+    </script>
 </body>
 </html>
-body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    background-color: #f0f0f0;
-}
-
-.game-container {
-    text-align: center;
-}
-
-h1 {
-    color: #2c3e50;
-}
-
-.field {
-    position: relative;
-    width: 600px;
-    height: 400px;
-    background-color: #2ecc71;
-    border: 5px solid #27ae60;
-    border-radius: 10px;
-    overflow: hidden;
-    margin: 20px auto;
-}
-
-.goal {
-    position: absolute;
-    width: 20px;
-    height: 100px;
-    background-color: #fff;
-    top: 150px;
-    border: 2px solid #000;
-}
-
-.left-goal {
-    left: 0;
-}
-
-.right-goal {
-    right: 0;
-}
-
-.player {
-    position: absolute;
-    width: 30px;
-    height: 30px;
-    background-color: #3498db;
-    border-radius: 50%;
-    transition: transform 0.1s;
-}
-
-.ball {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    background-color: #fff;
-    border-radius: 50%;
-    border: 1px solid #000;
-}
-
-.scoreboard {
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 24px;
-    font-weight: bold;
-    color: white;
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 5px 15px;
-    border-radius: 5px;
-}
-
-.controls {
-    margin-top: 20px;
-}
-
-button {
-    padding: 10px 20px;
-    font-size: 16px;
-    background-color: #3498db;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #2980b9;
-}document.addEventListener('DOMContentLoaded', () => {
-    const player = document.getElementById('player');
-    const ball = document.getElementById('ball');
-    const playerScoreElement = document.getElementById('player-score');
-    const computerScoreElement = document.getElementById('computer-score');
-    const resetBtn = document.getElementById('reset-btn');
-    
-    let playerScore = 0;
-    let computerScore = 0;
-    let ballVelocityX = 0;
-    let ballVelocityY = 0;
-    let isBallMoving = false;
-    
-    // Vị trí ban đầu
-    let playerX = 150;
-    let playerY = 185;
-    let ballX = 300;
-    let ballY = 190;
-    
-    // Kích thước sân
-    const fieldWidth = 600;
-    const fieldHeight = 400;
-    
-    // Cập nhật vị trí các phần tử
-    function updatePositions() {
-        player.style.left = `${playerX}px`;
-        player.style.top = `${playerY}px`;
-        ball.style.left = `${ballX}px`;
-        ball.style.top = `${ballY}px`;
-    }
-    
-    // Kiểm tra va chạm
-    function checkCollision() {
-        const playerRect = player.getBoundingClientRect();
-        const ballRect = ball.getBoundingClientRect();
-        
-        return (
-            playerRect.left < ballRect.right &&
-            playerRect.right > ballRect.left &&
-            playerRect.top < ballRect.bottom &&
-            playerRect.bottom > ballRect.top
-        );
-    }
-    
-    // Sút bóng
-    function kickBall() {
-        if (!isBallMoving && checkCollision()) {
-            const angle = Math.atan2(ballY - playerY, ballX - playerX);
-            const power = 10;
-            
-            ballVelocityX = Math.cos(angle) * power;
-            ballVelocityY = Math.sin(angle) * power;
-            isBallMoving = true;
-        }
-    }
-    
-    // Di chuyển bóng
-    function moveBall() {
-        if (!isBallMoving) return;
-        
-        ballX += ballVelocityX;
-        ballY += ballVelocityY;
-        
-        // Giảm tốc bóng
-        ballVelocityX *= 0.98;
-        ballVelocityY *= 0.98;
-        
-        // Kiểm tra va chạm với biên
-        if (ballX <= 0 || ballX >= fieldWidth - 20) {
-            ballVelocityX *= -0.8;
-            
-            // Kiểm tra ghi bàn
-            if (ballX <= 0 && ballY >= 150 && ballY <= 250) {
-                playerScore++;
-                playerScoreElement.textContent = playerScore;
-                resetBall();
-                return;
-            } else if (ballX >= fieldWidth - 20 && ballY >= 150 && ballY <= 250) {
-                computerScore++;
-                computerScoreElement.textContent = computerScore;
-                resetBall();
-                return;
-            }
-        }
-        
-        if (ballY <= 0 || ballY >= fieldHeight - 20) {
-            ballVelocityY *= -0.8;
-        }
-        
-        // Dừng bóng nếu tốc độ quá chậm
-        if (Math.abs(ballVelocityX) < 0.1 && Math.abs(ballVelocityY) < 0.1) {
-            isBallMoving = false;
-        }
-    }
-    
-    // Reset bóng về vị trí giữa sân
-    function resetBall() {
-        ballX = fieldWidth / 2 - 10;
-        ballY = fieldHeight / 2 - 10;
-        ballVelocityX = 0;
-        ballVelocityY = 0;
-        isBallMoving = false;
-        updatePositions();
-    }
-    
-    // Reset game
-    function resetGame() {
-        playerScore = 0;
-        computerScore = 0;
-        playerScoreElement.textContent = playerScore;
-        computerScoreElement.textContent = computerScore;
-        playerX = 150;
-        playerY = 185;
-        resetBall();
-    }
-    
-    // Xử lý sự kiện bàn phím
-    document.addEventListener('keydown', (e) => {
-        const speed = 10;
-        
-        switch(e.key) {
-            case 'ArrowUp':
-                playerY = Math.max(0, playerY - speed);
-                break;
-            case 'ArrowDown':
-                playerY = Math.min(fieldHeight - 30, playerY + speed);
-                break;
-            case 'ArrowLeft':
-                playerX = Math.max(0, playerX - speed);
-                break;
-            case 'ArrowRight':
-                playerX = Math.min(fieldWidth - 30, playerX + speed);
-                break;
-            case ' ':
-                kickBall();
-                break;
-        }
-    });
-    
-    resetBtn.addEventListener('click', resetGame);
-    
-    // Game loop
-    function gameLoop() {
-        moveBall();
-        updatePositions();
-        requestAnimationFrame(gameLoop);
-    }
-    
-    // Khởi động game
-    resetGame();
-    gameLoop();
-});
