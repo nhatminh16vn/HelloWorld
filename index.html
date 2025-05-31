@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Game Người Di Chuyển Đơn Giản</title>
+    <title>Game Người và Bóng</title>
     <style>
         body {
             margin: 0;
@@ -10,7 +10,7 @@
         }
         canvas {
             display: block;
-            background-color: #000000; /* Màu nền đen */
+            background-color: #87CEEB; /* Màu nền xanh da trời */
         }
     </style>
 </head>
@@ -23,19 +23,29 @@
         const ctx = canvas.getContext('2d');
 
         // Đặt kích thước canvas
-        canvas.width = 100;
-        canvas.height = 1;
+        canvas.width = 800;
+        canvas.height = 500;
 
         // Nhân vật
         const player = {
             x: canvas.width / 2,
             y: canvas.height / 2,
-            width: 50,
-            height: 80,
-            speed:0.00000000000000000000001,
+            width: 40,
+            height: 60,
+            speed: 5,
             color: '#FF6347', // Màu cam
             isMoving: false,
-            direction: 'down' // hướng mặc định
+            direction: 'down'
+        };
+
+        // Quả bóng
+        const ball = {
+            x: 100,
+            y: 100,
+            radius: 20,
+            dx: 3,
+            dy: 3,
+            color: '#0095DD' // Màu xanh
         };
 
         // Vẽ nhân vật
@@ -50,14 +60,31 @@
             ctx.arc(player.x, player.y - player.height/2 - 15, 15, 0, Math.PI * 2);
             ctx.fillStyle = '#FFD700'; // Màu vàng cho đầu
             ctx.fill();
-            
-            // Hiển thị hướng di chuyển
-            if (player.isMoving) {
-                ctx.fillStyle = 'white';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('Đang di chuyển: ' + player.direction, player.x, player.y + player.height/2 + 20);
-            }
+        }
+
+        // Vẽ quả bóng
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = ball.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // Kiểm tra va chạm giữa nhân vật và bóng
+        function checkCollision() {
+            const distX = Math.abs(ball.x - player.x);
+            const distY = Math.abs(ball.y - player.y);
+
+            if (distX > (player.width/2 + ball.radius)) return false;
+            if (distY > (player.height/2 + ball.radius)) return false;
+
+            if (distX <= (player.width/2)) return true; 
+            if (distY <= (player.height/2)) return true;
+
+            const dx = distX - player.width/2;
+            const dy = distY - player.height/2;
+            return (dx*dx + dy*dy <= (ball.radius * ball.radius));
         }
 
         // Xử lý sự kiện bàn phím
@@ -71,7 +98,7 @@
             player.isMoving = false;
         });
 
-        // Cập nhật vị trí nhân vật
+        // Cập nhật game
         function update() {
             // Xóa canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -98,8 +125,36 @@
             player.x = Math.max(player.width/2, Math.min(canvas.width - player.width/2, player.x));
             player.y = Math.max(player.height/2 + 15, Math.min(canvas.height - player.height/2, player.y));
             
-            // Vẽ nhân vật
+            // Di chuyển bóng
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+            
+            // Kiểm tra va chạm bóng với tường
+            if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
+                ball.dx = -ball.dx;
+            }
+            if (ball.y + ball.dy > canvas.height - ball.radius || ball.y + ball.dy < ball.radius) {
+                ball.dy = -ball.dy;
+            }
+            
+            // Kiểm tra va chạm giữa nhân vật và bóng
+            if (checkCollision()) {
+                // Đổi hướng bóng khi va chạm
+                ball.dx = -ball.dx;
+                ball.dy = -ball.dy;
+                // Đẩy bóng ra xa
+                ball.x += ball.dx * 2;
+                ball.y += ball.dy * 2;
+            }
+            
+            // Vẽ các đối tượng
             drawPlayer();
+            drawBall();
+            
+            // Hiển thị thông tin
+            ctx.fillStyle = 'black';
+            ctx.font = '16px Arial';
+            ctx.fillText('Dùng phím mũi tên hoặc WASD để di chuyển', 10, 20);
             
             // Lặp lại animation
             requestAnimationFrame(update);
