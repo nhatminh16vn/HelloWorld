@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Game Bóng Nảy Đơn Giản</title>
+    <title>Game Người Di Chuyển Đơn Giản</title>
     <style>
         body {
             margin: 0;
@@ -10,7 +10,7 @@
         }
         canvas {
             display: block;
-            background-color: #222;
+            background-color: #87CEEB; /* Màu nền xanh da trời */
         }
     </style>
 </head>
@@ -22,48 +22,84 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Đặt kích thước canvas bằng kích thước cửa sổ
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        // Đặt kích thước canvas
+        canvas.width = 800;
+        canvas.height = 500;
 
-        // Thông số quả bóng
-        const ball = {
+        // Nhân vật
+        const player = {
             x: canvas.width / 2,
             y: canvas.height / 2,
-            radius: 100,
-            dx: 4,
-            dy: 4,
-            color: '#FF0000'
+            width: 40,
+            height: 60,
+            speed: 5,
+            color: '#FF6347', // Màu cam
+            isMoving: false,
+            direction: 'down' // hướng mặc định
         };
 
-        // Vẽ quả bóng
-        function drawBall() {
+        // Vẽ nhân vật
+        function drawPlayer() {
+            ctx.fillStyle = player.color;
+            
+            // Vẽ thân
+            ctx.fillRect(player.x - player.width/2, player.y - player.height/2, player.width, player.height);
+            
+            // Vẽ đầu
             ctx.beginPath();
-            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-            ctx.fillStyle = ball.color;
+            ctx.arc(player.x, player.y - player.height/2 - 15, 15, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFD700'; // Màu vàng cho đầu
             ctx.fill();
-            ctx.closePath();
+            
+            // Hiển thị hướng di chuyển
+            if (player.isMoving) {
+                ctx.fillStyle = 'white';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Đang di chuyển: ' + player.direction, player.x, player.y + player.height/2 + 20);
+            }
         }
 
-        // Cập nhật vị trí quả bóng
+        // Xử lý sự kiện bàn phím
+        const keys = {};
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            player.isMoving = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+            player.isMoving = false;
+        });
+
+        // Cập nhật vị trí nhân vật
         function update() {
             // Xóa canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Vẽ bóng
-            drawBall();
-            
-            // Di chuyển bóng
-            ball.x += ball.dx;
-            ball.y += ball.dy;
-            
-            // Kiểm tra va chạm với tường
-            if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
-                ball.dx = -ball.dx;
+            // Di chuyển nhân vật
+            if (keys['ArrowUp'] || keys['w']) {
+                player.y -= player.speed;
+                player.direction = 'lên';
             }
-            if (ball.y + ball.dy > canvas.height - ball.radius || ball.y + ball.dy < ball.radius) {
-                ball.dy = -ball.dy;
+            if (keys['ArrowDown'] || keys['s']) {
+                player.y += player.speed;
+                player.direction = 'xuống';
             }
+            if (keys['ArrowLeft'] || keys['a']) {
+                player.x -= player.speed;
+                player.direction = 'trái';
+            }
+            if (keys['ArrowRight'] || keys['d']) {
+                player.x += player.speed;
+                player.direction = 'phải';
+            }
+            
+            // Giới hạn nhân vật trong canvas
+            player.x = Math.max(player.width/2, Math.min(canvas.width - player.width/2, player.x));
+            player.y = Math.max(player.height/2 + 15, Math.min(canvas.height - player.height/2, player.y));
+            
+            // Vẽ nhân vật
+            drawPlayer();
             
             // Lặp lại animation
             requestAnimationFrame(update);
@@ -71,12 +107,6 @@
 
         // Bắt đầu game
         update();
-
-        // Xử lý khi thay đổi kích thước cửa sổ
-        window.addEventListener('resize', function() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
     </script>
 </body>
 </html>
