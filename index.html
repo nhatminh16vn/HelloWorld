@@ -27,3 +27,248 @@
     <script src="game.js"></script>
 </body>
 </html>
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+}
+
+.game-container {
+    text-align: center;
+}
+
+h1 {
+    color: #2c3e50;
+}
+
+.field {
+    position: relative;
+    width: 600px;
+    height: 400px;
+    background-color: #2ecc71;
+    border: 5px solid #27ae60;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 20px auto;
+}
+
+.goal {
+    position: absolute;
+    width: 20px;
+    height: 100px;
+    background-color: #fff;
+    top: 150px;
+    border: 2px solid #000;
+}
+
+.left-goal {
+    left: 0;
+}
+
+.right-goal {
+    right: 0;
+}
+
+.player {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background-color: #3498db;
+    border-radius: 50%;
+    transition: transform 0.1s;
+}
+
+.ball {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: #fff;
+    border-radius: 50%;
+    border: 1px solid #000;
+}
+
+.scoreboard {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px 15px;
+    border-radius: 5px;
+}
+
+.controls {
+    margin-top: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #2980b9;
+}document.addEventListener('DOMContentLoaded', () => {
+    const player = document.getElementById('player');
+    const ball = document.getElementById('ball');
+    const playerScoreElement = document.getElementById('player-score');
+    const computerScoreElement = document.getElementById('computer-score');
+    const resetBtn = document.getElementById('reset-btn');
+    
+    let playerScore = 0;
+    let computerScore = 0;
+    let ballVelocityX = 0;
+    let ballVelocityY = 0;
+    let isBallMoving = false;
+    
+    // Vị trí ban đầu
+    let playerX = 150;
+    let playerY = 185;
+    let ballX = 300;
+    let ballY = 190;
+    
+    // Kích thước sân
+    const fieldWidth = 600;
+    const fieldHeight = 400;
+    
+    // Cập nhật vị trí các phần tử
+    function updatePositions() {
+        player.style.left = `${playerX}px`;
+        player.style.top = `${playerY}px`;
+        ball.style.left = `${ballX}px`;
+        ball.style.top = `${ballY}px`;
+    }
+    
+    // Kiểm tra va chạm
+    function checkCollision() {
+        const playerRect = player.getBoundingClientRect();
+        const ballRect = ball.getBoundingClientRect();
+        
+        return (
+            playerRect.left < ballRect.right &&
+            playerRect.right > ballRect.left &&
+            playerRect.top < ballRect.bottom &&
+            playerRect.bottom > ballRect.top
+        );
+    }
+    
+    // Sút bóng
+    function kickBall() {
+        if (!isBallMoving && checkCollision()) {
+            const angle = Math.atan2(ballY - playerY, ballX - playerX);
+            const power = 10;
+            
+            ballVelocityX = Math.cos(angle) * power;
+            ballVelocityY = Math.sin(angle) * power;
+            isBallMoving = true;
+        }
+    }
+    
+    // Di chuyển bóng
+    function moveBall() {
+        if (!isBallMoving) return;
+        
+        ballX += ballVelocityX;
+        ballY += ballVelocityY;
+        
+        // Giảm tốc bóng
+        ballVelocityX *= 0.98;
+        ballVelocityY *= 0.98;
+        
+        // Kiểm tra va chạm với biên
+        if (ballX <= 0 || ballX >= fieldWidth - 20) {
+            ballVelocityX *= -0.8;
+            
+            // Kiểm tra ghi bàn
+            if (ballX <= 0 && ballY >= 150 && ballY <= 250) {
+                playerScore++;
+                playerScoreElement.textContent = playerScore;
+                resetBall();
+                return;
+            } else if (ballX >= fieldWidth - 20 && ballY >= 150 && ballY <= 250) {
+                computerScore++;
+                computerScoreElement.textContent = computerScore;
+                resetBall();
+                return;
+            }
+        }
+        
+        if (ballY <= 0 || ballY >= fieldHeight - 20) {
+            ballVelocityY *= -0.8;
+        }
+        
+        // Dừng bóng nếu tốc độ quá chậm
+        if (Math.abs(ballVelocityX) < 0.1 && Math.abs(ballVelocityY) < 0.1) {
+            isBallMoving = false;
+        }
+    }
+    
+    // Reset bóng về vị trí giữa sân
+    function resetBall() {
+        ballX = fieldWidth / 2 - 10;
+        ballY = fieldHeight / 2 - 10;
+        ballVelocityX = 0;
+        ballVelocityY = 0;
+        isBallMoving = false;
+        updatePositions();
+    }
+    
+    // Reset game
+    function resetGame() {
+        playerScore = 0;
+        computerScore = 0;
+        playerScoreElement.textContent = playerScore;
+        computerScoreElement.textContent = computerScore;
+        playerX = 150;
+        playerY = 185;
+        resetBall();
+    }
+    
+    // Xử lý sự kiện bàn phím
+    document.addEventListener('keydown', (e) => {
+        const speed = 10;
+        
+        switch(e.key) {
+            case 'ArrowUp':
+                playerY = Math.max(0, playerY - speed);
+                break;
+            case 'ArrowDown':
+                playerY = Math.min(fieldHeight - 30, playerY + speed);
+                break;
+            case 'ArrowLeft':
+                playerX = Math.max(0, playerX - speed);
+                break;
+            case 'ArrowRight':
+                playerX = Math.min(fieldWidth - 30, playerX + speed);
+                break;
+            case ' ':
+                kickBall();
+                break;
+        }
+    });
+    
+    resetBtn.addEventListener('click', resetGame);
+    
+    // Game loop
+    function gameLoop() {
+        moveBall();
+        updatePositions();
+        requestAnimationFrame(gameLoop);
+    }
+    
+    // Khởi động game
+    resetGame();
+    gameLoop();
+});
