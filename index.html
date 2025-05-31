@@ -1,12 +1,82 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Trang web đầu tiên</title>
+    <title>Game Bóng Nảy Đơn Giản</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            display: block;
+            background-color: #222;
+        }
+    </style>
 </head>
 <body>
-    <h1>Xin chào Nhật Minh</h1>
-    <p>Đây là đoạn văn bản đầu tiên của tôi.</p>
-    <img src="hinh-anh.jpg" alt="Mô tả ảnh">
-    <a href="https://google.com">Nhấn vào đây để tới Google</a>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        // Lấy canvas và context
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Đặt kích thước canvas bằng kích thước cửa sổ
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Thông số quả bóng
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 20,
+            dx: 4,
+            dy: 4,
+            color: '#0095DD'
+        };
+
+        // Vẽ quả bóng
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = ball.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // Cập nhật vị trí quả bóng
+        function update() {
+            // Xóa canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Vẽ bóng
+            drawBall();
+            
+            // Di chuyển bóng
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+            
+            // Kiểm tra va chạm với tường
+            if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
+                ball.dx = -ball.dx;
+            }
+            if (ball.y + ball.dy > canvas.height - ball.radius || ball.y + ball.dy < ball.radius) {
+                ball.dy = -ball.dy;
+            }
+            
+            // Lặp lại animation
+            requestAnimationFrame(update);
+        }
+
+        // Bắt đầu game
+        update();
+
+        // Xử lý khi thay đổi kích thước cửa sổ
+        window.addEventListener('resize', function() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
 </body>
 </html>
