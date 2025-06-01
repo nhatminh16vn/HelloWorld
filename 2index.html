@@ -1,1 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bóng Né 2D với Bot</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #141a35;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+            background-color: #141a35;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 24px;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            font-size: 16px;
+        }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 36px;
+            text-align: center;
+            display: none;
+        }
+        button {
+            padding: 8px 16px;
+            font-size: 16px;
+            margin: 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Điểm: 0</div>
+    <div id="controls">
+        <button id="botBtn" onclick="toggleBot()">Bật Bot</button>
+        <button onclick="resetGame()">Chơi lại</button>
+    </div>
+    <div id="gameOver">
+        GAME OVER!<br>
+        <span id="finalScore">Điểm: 0</span><br>
+        <button onclick="resetGame()">Chơi lại</button>
+    </div>
+    <canvas id="gameCanvas"></canvas>
 
+    <script>
+        // Cài đặt canvas
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 800;
+        canvas.height = 600;
+
+        // Biến game
+        let player = {
+            x: canvas.width / 2 - 20,
+            y: canvas.height - 60,
+            width: 40,
+            height: 40,
+            speed: 7,
+            color: '#32c896'
+        };
+
+        let balls = [];
+        const ballRadius = 20;
+        let ballSpeed = 3;
+        let score = 0;
+        let gameActive = false;
+        let animationId;
+        let botActive = false;
+        let predictionCanvas = document.createElement('canvas');
+        predictionCanvas.width = canvas.width;
+        predictionCanvas.height = canvas.height;
+        let predictionCtx = predictionCanvas.getContext('2d');
+
+        // Hàm vẽ người chơi
+        function drawPlayer() {
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+        }
+
+        // Hàm tạo bóng mới
+        function spawnBall() {
+            const x = Math.random() * (canvas.width - ballRadius * 2) + ballRadius;
+            const speedMultiplier = 1 + Math.min(score / 50, 2); // Tăng tốc độ theo điểm
+            balls.push({
+                x: x,
+                y: -ballRadius,
+                radius: ballRadius,
+                color: '#dc3c50',
+                speed: ballSpeed * speedMultiplier
+            });
+        }
+
+        // Hàm vẽ bóng
+        function drawBalls() {
+            balls.forEach(ball => {
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+                ctx.fillStyle = ball.color;
+                ctx.fill();
+                ctx.closePath();
+            });
+        }
+
+        // Hàm kiểm tra va chạm
+        function checkCollision(ball) {
+            // Tính toán hình chữ nhật bao quanh người chơi
+            const playerLeft = player.x;
+            const playerRight = player.x + player.width;
+            const playerTop = player.y;
+            const playerBottom = player.y + player.height;
+            
+            // Tính toán hình tròn bao quanh bóng
+            const ballLeft = ball.x - ball.radius;
+            const ballRight = ball.x + ball.radius;
+            const ballTop = ball.y - ball.radius;
+            const ballBottom = ball.y + ball.radius;
+            
+            // Kiểm tra va chạm đơn giản giữa hình chữ nhật và hình tròn
+            if (playerRight < ballLeft || playerLeft > ballRight || 
+                playerBottom < ballTop || playerTop > ballBottom) {
+                return false;
+            }
+            
+            // Kiểm tra va chạm chính xác hơn ở các góc
+            const nearestX = Math.max(playerLeft, Math.min(ball.x, playerRight));
+            const nearestY = Math.max(playerTop, Math.min(ball.y, playerBottom));
+            
+            const distX = ball.x - nearestX;
+            const distY = ball.y - nearestY;
+            
+            return (distX * distX + distY * distY) <= (ball.radius * ball.radius);
+        }
+
+        // Bot AI né bóng
+        function botMovement() {
+            if (!botActive || balls.length === 0) return;
+            
+            // Tìm bóng gần nhất và nguy hiểm nhất
+            let mostDangerousBall = null;
+            let minTimeToHit = Infinity;
+            
+            balls.forEach(ball => {
+                // Thời gian để bóng chạm người chơi (tính bằng frames)
+                const timeToHit = (player.y - ball.y - ball.radius) / ball.speed;
+                
+                // Chỉ xét các bóng đang ở phía trên người chơi
+                if (timeToHit > 0 && timeToHit < 120) { // Giới hạn trong 2 giây (60fps)
+                    if (timeToHit < minTimeToHit) {
+                        minTimeToHit = timeToHit;
+                        mostDangerousBall = ball;
+                    }
+                }
+            });
+            
+            if (mostDangerousBall) {
+                // Tính vị trí bóng sẽ rơi xuống
+                const predictedX = mostDangerousBall.x;
+                const playerCenterX = player.x + player.width / 2;
+                
+                // Quyết định di chuyển
+                if (predictedX < playerCenterX - 10) {
+                    // Di chuyển sang phải nếu bóng ở bên trái
+                    player.x = Math.min(player.x + player.speed, canvas.width - player.width);
+                } else if (predictedX > playerCenterX + 10) {
+                    // Di chuyển sang trái nếu bóng ở bên phải
+                    player.x = Math.max(player.x - player.speed, 0);
+                }
+                // Nếu bóng ở giữa, có thể di chuyển lên/xuống tùy tình huống
+            }
+        }
+
+        // Hàm cập nhật game
+        function update() {
+            if (!gameActive) return;
+            
+            // Xóa màn hình
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Bot điều khiển
+            if (botActive) {
+                botMovement();
+            }
+            
+            // Di chuyển và vẽ người chơi
+            drawPlayer();
+
+            // Tạo bóng mới ngẫu nhiên
+            if (Math.random() < 0.02 + Math.min(score / 1000, 0.03)) {
+                spawnBall();
+            }
+
+            // Di chuyển và vẽ bóng
+            for (let i = balls.length - 1; i >= 0; i--) {
+                balls[i].y += balls[i].speed;
+                
+                // Kiểm tra va chạm
+                if (checkCollision(balls[i])) {
+                    gameOver();
+                    return;
+                }
+                
+                // Xóa bóng nếu ra khỏi màn hình
+                if (balls[i].y > canvas.height + ballRadius) {
+                    balls.splice(i, 1);
+                    score++;
+                    document.getElementById('score').textContent = `Điểm: ${score}`;
+                }
+            }
+            
+            drawBalls();
+            
+            animationId = requestAnimationFrame(update);
+        }
+
+        // Hàm xử lý khi game kết thúc
+        function gameOver() {
+            gameActive = false;
+            cancelAnimationFrame(animationId);
+            document.getElementById('finalScore').textContent = `Điểm: ${score}`;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        // Hàm reset game
+        function resetGame() {
+            balls = [];
+            score = 0;
+            ballSpeed = 3;
+            player.x = canvas.width / 2 - 20;
+            player.y = canvas.height - 60;
+            document.getElementById('score').textContent = `Điểm: ${score}`;
+            document.getElementById('gameOver').style.display = 'none';
+            gameActive = true;
+            update();
+        }
+
+        // Bật/tắt bot
+        function toggleBot() {
+            botActive = !botActive;
+            document.getElementById('botBtn').textContent = botActive ? 'Tắt Bot' : 'Bật Bot';
+        }
+
+        // Xử lý sự kiện bàn phím
+        const keys = {};
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Cập nhật vị trí người chơi (khi không dùng bot)
+        function handlePlayerMovement() {
+            if (botActive) return;
+            
+            if (keys['ArrowLeft'] && player.x > 0) {
+                player.x -= player.speed;
+            }
+            if (keys['ArrowRight'] && player.x < canvas.width - player.width) {
+                player.x += player.speed;
+            }
+            if (keys['ArrowUp'] && player.y > 0) {
+                player.y -= player.speed;
+            }
+            if (keys['ArrowDown'] && player.y < canvas.height - player.height) {
+                player.y += player.speed;
+            }
+        }
+
+        // Vòng lặp game
+        function gameLoop() {
+            handlePlayerMovement();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Bắt đầu game
+        resetGame();
+        gameLoop();
+    </script>
+</body>
+</html>
