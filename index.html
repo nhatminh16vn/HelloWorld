@@ -3,50 +3,134 @@
 <head>
     <title>Game Rắn Săn Mồi</title>
     <style>
-        body { margin: 0; text-align: center; }
-        canvas { background: #000; display: block; margin: 0 auto; }
+        body { 
+            margin: 0; 
+            text-align: center; 
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        canvas { 
+            background: #000; 
+            display: block; 
+            margin: 20px auto; 
+            border: 2px solid #333;
+        }
+        h2 {
+            color: green;
+            margin-top: 20px;
+        }
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px;
+        }
     </style>
 </head>
 <body>
-    <h2 style="color: green">RẮN SĂN MỒI</h2>
+    <h2>RẮN SĂN MỒI</h2>
+    <div class="score">Điểm: <span id="scoreDisplay">0</span></div>
     <canvas id="game" width="400" height="400"></canvas>
     <p>Dùng phím mũi tên để di chuyển</p>
 
     <script>
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
-        const box = 150; // Kích thước ô vuông
-        let snake = [{x: 9*box, y: 10*box}];
-        let food = {x: Math.floor(Math.random()*20)*box, y: Math.floor(Math.random()*20)*box};
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const box = 20; // Kích thước ô vuông (20x20)
+        let snake = [{x: 10 * box, y: 10 * box}]; // Bắt đầu ở giữa màn hình
+        let food = generateFood();
         let direction = null;
+        let nextDirection = null; // Để xử lý hướng đi mượt mà hơn
         let score = 0;
+        let gameSpeed = 200; // 200ms = 5 lần/giây (tương đương 2 ô/giây khi di chuyển liên tục)
+        let gameInterval;
+
+        // Tạo thức ăn mới, đảm bảo không trùng với thân rắn
+        function generateFood() {
+            let newFood;
+            do {
+                newFood = {
+                    x: Math.floor(Math.random() * (canvas.width / box)) * box,
+                    y: Math.floor(Math.random() * (canvas.height / box)) * box
+                };
+            } while (snake.some(segment => segment.x === newFood.x && segment.y === newFood.y));
+            return newFood;
+        }
 
         // Điều khiển
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
-            if (e.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
-            if (e.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
-            if (e.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
+            if (e.key === 'ArrowUp' && direction !== 'DOWN') nextDirection = 'UP';
+            if (e.key === 'ArrowDown' && direction !== 'UP') nextDirection = 'DOWN';
+            if (e.key === 'ArrowLeft' && direction !== 'RIGHT') nextDirection = 'LEFT';
+            if (e.key === 'ArrowRight' && direction !== 'LEFT') nextDirection = 'RIGHT';
         });
 
         // Vẽ game
         function draw() {
+            // Xóa canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
             // Vẽ rắn
-            ctx.fillStyle = 'lime';
-            snake.forEach(segment => ctx.fillRect(segment.x, segment.y, box-1, box-1));
+            snake.forEach((segment, index) => {
+                ctx.fillStyle = index === 0 ? '#4CAF50' : '#8BC34A'; // Đầu màu xanh đậm, thân màu xanh nhạt
+                ctx.fillRect(segment.x, segment.y, box-1, box-1);
+                
+                // Thêm mắt cho đầu rắn
+                if (index === 0) {
+                    ctx.fillStyle = 'white';
+                    const eyeSize = box / 5;
+                    if (direction === 'RIGHT' || direction === null) {
+                        ctx.fillRect(segment.x + box - eyeSize*2, segment.y + eyeSize, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + box - eyeSize*2, segment.y + box - eyeSize*2, eyeSize, eyeSize);
+                    } else if (direction === 'LEFT') {
+                        ctx.fillRect(segment.x + eyeSize, segment.y + eyeSize, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + eyeSize, segment.y + box - eyeSize*2, eyeSize, eyeSize);
+                    } else if (direction === 'UP') {
+                        ctx.fillRect(segment.x + eyeSize, segment.y + eyeSize, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + box - eyeSize*2, segment.y + eyeSize, eyeSize, eyeSize);
+                    } else if (direction === 'DOWN') {
+                        ctx.fillRect(segment.x + eyeSize, segment.y + box - eyeSize*2, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + box - eyeSize*2, segment.y + box - eyeSize*2, eyeSize, eyeSize);
+                    }
+                }
+            });
             
-            // Vẽ thức ăn
+            // Vẽ thức ăn (hình tròn)
             ctx.fillStyle = 'red';
-            ctx.fillRect(food.x, food.y, box, box);
+            ctx.beginPath();
+            ctx.arc(food.x + box/2, food.y + box/2, box/2 - 1, 0, Math.PI * 2);
+            ctx.fill();
             
-            // Hiển thị điểm
-            ctx.fillStyle = 'white';
-            ctx.font = '20px Arial';
-            ctx.fillText('Điểm: ' + score, 10, 20);
+            // Vẽ lưới (tùy chọn)
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i < canvas.width; i += box) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvas.width, i);
+                ctx.stroke();
+            }
         }
 
         // Game loop
         function gameLoop() {
+            // Cập nhật hướng đi
+            if (nextDirection) {
+                direction = nextDirection;
+                nextDirection = null;
+            }
+            
+            // Nếu chưa có hướng đi thì không di chuyển
+            if (!direction) {
+                draw();
+                return;
+            }
+            
             // Di chuyển rắn
             const head = {...snake[0]};
             if (direction === 'UP') head.y -= box;
@@ -57,7 +141,7 @@
             // Kiểm tra va chạm
             if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || 
                 snake.some(segment => segment.x === head.x && segment.y === head.y)) {
-                clearInterval(game);
+                clearInterval(gameInterval);
                 alert('Game Over! Điểm: ' + score);
                 location.reload();
             }
@@ -67,7 +151,15 @@
             // Ăn thức ăn
             if (head.x === food.x && head.y === food.y) {
                 score++;
-                food = {x: Math.floor(Math.random()*20)*box, y: Math.floor(Math.random()*20)*box};
+                scoreDisplay.textContent = score;
+                food = generateFood();
+                
+                // Tăng tốc độ khi đạt điểm nhất định
+                if (score % 5 === 0 && gameSpeed > 100) {
+                    gameSpeed -= 10;
+                    clearInterval(gameInterval);
+                    gameInterval = setInterval(gameLoop, gameSpeed);
+                }
             } else {
                 snake.pop();
             }
@@ -75,7 +167,8 @@
             draw();
         }
 
-        const game = setInterval(gameLoop, 100);
+        // Bắt đầu game
+        gameInterval = setInterval(gameLoop, gameSpeed);
     </script>
 </body>
 </html>
