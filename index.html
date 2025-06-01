@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hiragana Ball Game - Hard Mode</title>
+    <title>Hiragana Ball Game - Expert Mode</title>
     <style>
         body {
             font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
@@ -103,7 +103,7 @@
         .ball-container {
             margin-top: 30px;
             position: relative;
-            height: 150px;
+            height: 100px;
         }
         
         .ball {
@@ -129,23 +129,6 @@
         .ball:active {
             cursor: grabbing;
             transform: translateX(-50%) scale(0.95);
-        }
-        
-        .target {
-            width: 120px;
-            height: 50px;
-            background-color: #a5b1c2;
-            border-radius: 25px;
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 18px;
-            color: white;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
         }
         
         .message {
@@ -201,7 +184,7 @@
     <div class="logo">日本語</div>
     
     <div class="game-container">
-        <h1>Hiragana Ball - Hard Mode</h1>
+        <h1>Hiragana Ball - Expert Mode</h1>
         
         <div class="game-info">
             <div class="timer">Time: <span id="time">30</span>s</div>
@@ -217,10 +200,9 @@
         
         <div class="ball-container">
             <div class="ball" id="ball" draggable="true">?</div>
-            <div class="target" id="target">Drop here</div>
         </div>
         
-        <div class="message" id="message">Match the ball to the correct Hiragana</div>
+        <div class="message" id="message">Drag the ball to the matching Hiragana</div>
     </div>
 
     <audio id="correctSound" src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3"></audio>
@@ -244,13 +226,23 @@
             'ざ', 'じ', 'ず', 'ぜ', 'ぞ',
             'だ', 'ぢ', 'づ', 'で', 'ど',
             'ば', 'び', 'ぶ', 'べ', 'ぼ',
-            'ぱ', 'ぴ', 'ぷ', 'ぺ', 'ぽ'
+            'ぱ', 'ぴ', 'ぷ', 'ぺ', 'ぽ',
+            'きゃ', 'きゅ', 'きょ',
+            'しゃ', 'しゅ', 'しょ',
+            'ちゃ', 'ちゅ', 'ちょ',
+            'にゃ', 'にゅ', 'にょ',
+            'ひゃ', 'ひゅ', 'ひょ',
+            'みゃ', 'みゅ', 'みょ',
+            'りゃ', 'りゅ', 'りょ',
+            'ぎゃ', 'ぎゅ', 'ぎょ',
+            'じゃ', 'じゅ', 'じょ',
+            'びゃ', 'びゅ', 'びょ',
+            'ぴゃ', 'ぴゅ', 'ぴょ'
         ];
         
         // Game elements
         const hiraganaBoard = document.getElementById('hiraganaBoard');
         const ball = document.getElementById('ball');
-        const target = document.getElementById('target');
         const message = document.getElementById('message');
         const timeDisplay = document.getElementById('time');
         const scoreDisplay = document.getElementById('score');
@@ -270,6 +262,8 @@
         let timer;
         let gameActive = true;
         let cells = [];
+        let combo = 0;
+        let maxCombo = 0;
         
         // Initialize the game
         function initGame() {
@@ -294,6 +288,17 @@
                 cell.dataset.hiragana = uniqueHiragana[i];
                 hiraganaBoard.appendChild(cell);
                 cells.push(cell);
+                
+                // Add drag and drop events
+                cell.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                });
+                
+                cell.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    if (!gameActive) return;
+                    checkAnswer(this.dataset.hiragana, this);
+                });
                 
                 // Add click event for mobile/touch devices
                 cell.addEventListener('click', function() {
@@ -366,7 +371,12 @@
                 // Correct answer
                 correctSound.play();
                 cellElement.classList.add('correct');
-                score += level * 10; // Higher levels give more points
+                combo++;
+                maxCombo = Math.max(maxCombo, combo);
+                
+                // Calculate score with combo bonus
+                const comboBonus = Math.floor(combo / 3);
+                score += (level * 10) + (comboBonus * 5);
                 scoreDisplay.textContent = score;
                 
                 // Check for level up (every 100 points)
@@ -377,7 +387,8 @@
                     message.textContent = `Level Up! Now level ${level}`;
                     message.style.color = '#0984e3';
                 } else {
-                    message.textContent = 'Correct! +' + (level * 10) + ' points';
+                    const bonusText = comboBonus > 0 ? ` (+${comboBonus * 5} combo bonus)` : '';
+                    message.textContent = `Correct! +${level * 10} points${bonusText}`;
                     message.style.color = '#00b894';
                 }
                 
@@ -386,6 +397,7 @@
                 // Wrong answer
                 wrongSound.play();
                 cellElement.classList.add('wrong');
+                combo = 0;
                 message.textContent = 'Wrong! Try again';
                 message.style.color = '#d63031';
                 
@@ -407,7 +419,7 @@
             
             if (!success) {
                 timeoutSound.play();
-                message.textContent = 'Time\'s up! Game over';
+                message.textContent = `Time's up! Game over (Max Combo: ${maxCombo})`;
                 message.style.color = '#d63031';
                 
                 // Highlight the correct answer
@@ -416,6 +428,10 @@
                         cell.classList.add('correct');
                     }
                 });
+                
+                // Reset combo
+                combo = 0;
+                maxCombo = 0;
             }
             
             // Start a new round after a delay
@@ -429,24 +445,6 @@
                 return;
             }
             e.dataTransfer.setData('text/plain', currentHiragana);
-        });
-        
-        target.addEventListener('dragover', function(e) {
-            e.preventDefault();
-        });
-        
-        target.addEventListener('drop', function(e) {
-            e.preventDefault();
-            if (!gameActive) return;
-            
-            const droppedHiragana = e.dataTransfer.getData('text/plain');
-            
-            // Find the cell with the matching Hiragana
-            const targetCell = cells.find(cell => cell.dataset.hiragana === droppedHiragana);
-            
-            if (targetCell) {
-                checkAnswer(droppedHiragana, targetCell);
-            }
         });
         
         // Prevent default drag behavior
