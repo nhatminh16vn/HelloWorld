@@ -147,13 +147,13 @@
         };
 
         let balls = [];
-        let ballSpeed = 3;
+        let ballSpeed = 30;
         let gameActive = false;
         let gamePaused = false;
         let animationId;
         let gameMode = '';
         let frameCount = 0;
-        let difficulty = 1;
+        let difficulty = 100;
 
         // Hàm vẽ người chơi
         function drawPlayer(p) {
@@ -176,7 +176,7 @@
                 radius: BALL_RADIUS,
                 color: getRandomBallColor(),
                 speed: speed,
-                target: Math.random() > 0.5 ? 'player' : 'bot'
+                target: Math.random() > 1 ? 'player' : 'bot'
             });
         }
 
