@@ -124,22 +124,22 @@
         const BALL_RADIUS = 15;
         
         let player = {
-            x: canvas.width / 4 - PLAYER_SIZE / 2,
-            y: canvas.height - PLAYER_SIZE - 20,
+            x: canvas.width / 4 - PLAYER_SIZE / 4,
+            y: canvas.height - PLAYER_SIZE - 30,
             width: PLAYER_SIZE,
             height: PLAYER_SIZE,
-            speed: 8,
+            speed: 30,
             color: '#32c896',
             score: 0,
             active: false
         };
 
         let bot = {
-            x: canvas.width * 3/4 - BOT_SIZE / 2,
-            y: canvas.height - BOT_SIZE - 20,
+            x: canvas.width / 4 - BOT_SIZE / 4,
+            y: canvas.height - BOT_SIZE - 30,
             width: BOT_SIZE,
             height: BOT_SIZE,
-            speed: 8,
+            speed: 20,
             color: '#dc3c50',
             score: 0,
             active: false,
@@ -168,7 +168,7 @@
         // Hàm tạo bóng mới
         function spawnBall() {
             const x = Math.random() * (canvas.width - BALL_RADIUS * 2) + BALL_RADIUS;
-            const speed = ballSpeed * (0.9 + Math.random() * 0.4) * difficulty;
+            const speed = ballSpeed * (1 + Math.random() * 0.5) * difficulty;
             
             balls.push({
                 x: x,
@@ -319,7 +319,7 @@
             if (bot.active) drawPlayer(bot);
 
             // Tạo bóng mới ngẫu nhiên
-            if (Math.random() < 0.02 * difficulty) {
+            if (Math.random() < 0.5 * difficulty) {
                 spawnBall();
             }
 
