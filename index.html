@@ -1,463 +1,540 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hiragana Ball Game - Expert Mode</title>
+    <title>Trò chơi đá bóng 11 vs 11</title>
     <style>
         body {
-            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
-            text-align: center;
-            background-color: #f0f8ff;
             margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-        }
-        
-        .logo {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 100px;
-            height: 100px;
-            background-color: #ff6b6b;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-weight: bold;
-            font-size: 24px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            z-index: 10;
-        }
-        
-        .game-container {
-            margin-top: 50px;
-            position: relative;
-        }
-        
-        .game-info {
-            display: flex;
-            justify-content: space-around;
-            width: 300px;
-            margin: 0 auto 20px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        
-        .timer {
-            color: #e17055;
-        }
-        
-        .score {
-            color: #00b894;
-        }
-        
-        .level {
-            color: #0984e3;
-        }
-        
-        .hiragana-board {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            width: 90%;
-            max-width: 500px;
-            margin: 20px auto;
-            perspective: 1000px;
-        }
-        
-        .hiragana-cell {
-            width: 100%;
-            aspect-ratio: 1;
-            background-color: #74b9ff;
-            border-radius: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 30px;
-            color: white;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            transform-style: preserve-3d;
-        }
-        
-        .hiragana-cell:hover {
-            transform: scale(1.05) rotateY(10deg);
-            background-color: #0984e3;
-        }
-        
-        .hiragana-cell.correct {
-            background-color: #00b894 !important;
-            transform: scale(0.95);
-            animation: pulse 0.5s;
-        }
-        
-        .hiragana-cell.wrong {
-            background-color: #d63031 !important;
-            animation: shake 0.5s;
-        }
-        
-        .ball-container {
-            margin-top: 30px;
-            position: relative;
-            height: 100px;
-        }
-        
-        .ball {
-            width: 70px;
-            height: 70px;
-            background: radial-gradient(circle at 30% 30%, #ffbe76, #f0932b);
-            border-radius: 50%;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            cursor: grab;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 28px;
-            color: white;
-            user-select: none;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-            transition: all 0.2s ease;
-            z-index: 5;
-        }
-        
-        .ball:active {
-            cursor: grabbing;
-            transform: translateX(-50%) scale(0.95);
-        }
-        
-        .message {
-            margin-top: 20px;
-            font-size: 24px;
-            color: #2d3436;
-            min-height: 36px;
-        }
-        
-        .progress-bar {
-            width: 80%;
-            max-width: 400px;
-            height: 10px;
-            background-color: #dfe6e9;
-            border-radius: 5px;
-            margin: 20px auto;
             overflow: hidden;
+            font-family: Arial, sans-serif;
         }
-        
-        .progress {
-            height: 100%;
-            background-color: #00b894;
-            width: 100%;
-            transition: width 0.1s linear;
+        #gameCanvas {
+            display: block;
+            background-color: green;
         }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+        #scoreBoard {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
         }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-        
-        @media (max-width: 600px) {
-            .hiragana-cell {
-                font-size: 24px;
-            }
-            
-            .ball {
-                width: 60px;
-                height: 60px;
-                font-size: 24px;
-            }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <div class="logo">日本語</div>
-    
-    <div class="game-container">
-        <h1>Hiragana Ball - Expert Mode</h1>
-        
-        <div class="game-info">
-            <div class="timer">Time: <span id="time">30</span>s</div>
-            <div class="score">Score: <span id="score">0</span></div>
-            <div class="level">Level: <span id="level">1</span></div>
-        </div>
-        
-        <div class="progress-bar">
-            <div class="progress" id="progress"></div>
-        </div>
-        
-        <div class="hiragana-board" id="hiraganaBoard"></div>
-        
-        <div class="ball-container">
-            <div class="ball" id="ball" draggable="true">?</div>
-        </div>
-        
-        <div class="message" id="message">Drag the ball to the matching Hiragana</div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="scoreBoard">Đội bạn: 0 - 0 : Đội đối phương</div>
+    <div id="controls">
+        Di chuyển: W,A,S,D | Đá bóng: Space | Chuyển hướng: Mũi tên
     </div>
 
-    <audio id="correctSound" src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3"></audio>
-    <audio id="wrongSound" src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3"></audio>
-    <audio id="timeoutSound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-explosion-2759.mp3"></audio>
-
     <script>
-        // Enhanced list of Hiragana characters (basic + dakuten/handakuten)
-        const hiragana = [
-            'あ', 'い', 'う', 'え', 'お',
-            'か', 'き', 'く', 'け', 'こ',
-            'さ', 'し', 'す', 'せ', 'そ',
-            'た', 'ち', 'つ', 'て', 'と',
-            'な', 'に', 'ぬ', 'ね', 'の',
-            'は', 'ひ', 'ふ', 'へ', 'ほ',
-            'ま', 'み', 'む', 'め', 'も',
-            'や', 'ゆ', 'よ',
-            'ら', 'り', 'る', 'れ', 'ろ',
-            'わ', 'を', 'ん',
-            'が', 'ぎ', 'ぐ', 'げ', 'ご',
-            'ざ', 'じ', 'ず', 'ぜ', 'ぞ',
-            'だ', 'ぢ', 'づ', 'で', 'ど',
-            'ば', 'び', 'ぶ', 'べ', 'ぼ',
-            'ぱ', 'ぴ', 'ぷ', 'ぺ', 'ぽ',
-            'きゃ', 'きゅ', 'きょ',
-            'しゃ', 'しゅ', 'しょ',
-            'ちゃ', 'ちゅ', 'ちょ',
-            'にゃ', 'にゅ', 'にょ',
-            'ひゃ', 'ひゅ', 'ひょ',
-            'みゃ', 'みゅ', 'みょ',
-            'りゃ', 'りゅ', 'りょ',
-            'ぎゃ', 'ぎゅ', 'ぎょ',
-            'じゃ', 'じゅ', 'じょ',
-            'びゃ', 'びゅ', 'びょ',
-            'ぴゃ', 'ぴゅ', 'ぴょ'
-        ];
-        
-        // Game elements
-        const hiraganaBoard = document.getElementById('hiraganaBoard');
-        const ball = document.getElementById('ball');
-        const message = document.getElementById('message');
-        const timeDisplay = document.getElementById('time');
-        const scoreDisplay = document.getElementById('score');
-        const levelDisplay = document.getElementById('level');
-        const progressBar = document.getElementById('progress');
-        
-        // Audio elements
-        const correctSound = document.getElementById('correctSound');
-        const wrongSound = document.getElementById('wrongSound');
-        const timeoutSound = document.getElementById('timeoutSound');
-        
-        // Game variables
-        let currentHiragana = '';
-        let score = 0;
-        let level = 1;
-        let timeLeft = 30;
-        let timer;
-        let gameActive = true;
-        let cells = [];
-        let combo = 0;
-        let maxCombo = 0;
-        
-        // Initialize the game
-        function initGame() {
-            gameActive = true;
-            clearInterval(timer);
-            timeLeft = Math.max(10, 35 - level * 3); // Time decreases as level increases
-            updateTimerDisplay();
-            
-            // Clear the board
-            hiraganaBoard.innerHTML = '';
-            cells = [];
-            
-            // Create 7x5 grid (35 cells)
-            const totalCells = 35;
-            const uniqueHiragana = getUniqueHiragana(totalCells);
-            
-            // Display them on the board
-            for (let i = 0; i < totalCells; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'hiragana-cell';
-                cell.textContent = uniqueHiragana[i];
-                cell.dataset.hiragana = uniqueHiragana[i];
-                hiraganaBoard.appendChild(cell);
-                cells.push(cell);
-                
-                // Add drag and drop events
-                cell.addEventListener('dragover', function(e) {
-                    e.preventDefault();
-                });
-                
-                cell.addEventListener('drop', function(e) {
-                    e.preventDefault();
-                    if (!gameActive) return;
-                    checkAnswer(this.dataset.hiragana, this);
-                });
-                
-                // Add click event for mobile/touch devices
-                cell.addEventListener('click', function() {
-                    if (!gameActive) return;
-                    checkAnswer(this.dataset.hiragana, this);
-                });
-            }
-            
-            // Select one random character for the ball (must exist on the board)
-            const randomCellIndex = Math.floor(Math.random() * totalCells);
-            currentHiragana = uniqueHiragana[randomCellIndex];
-            ball.textContent = currentHiragana;
-            
-            // Start timer
-            timer = setInterval(updateTimer, 100);
-            
-            // Reset message
-            message.textContent = `Find: ${currentHiragana}`;
-            message.style.color = '#2d3436';
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreBoard = document.getElementById('scoreBoard');
+
+        // Thiết lập kích thước canvas
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Biến trò chơi
+        let homeScore = 0;
+        let awayScore = 0;
+        let gameRunning = true;
+
+        // Cầu thủ
+        const player = {
+            x: canvas.width / 4,
+            y: canvas.height / 2,
+            radius: 15,
+            color: 'blue',
+            speed: 5,
+            dx: 0,
+            dy: 0,
+            team: 'home',
+            hasBall: false
+        };
+
+        // Đồng đội (10 bot)
+        const teammates = [];
+        for (let i = 0; i < 10; i++) {
+            teammates.push({
+                x: Math.random() * canvas.width / 2,
+                y: Math.random() * canvas.height,
+                radius: 15,
+                color: 'lightblue',
+                speed: 3 + Math.random() * 2,
+                dx: 0,
+                dy: 0,
+                team: 'home',
+                hasBall: false,
+                isBot: true
+            });
         }
-        
-        // Get unique Hiragana characters for the board
-        function getUniqueHiragana(count) {
-            const shuffled = [...hiragana].sort(() => 0.5 - Math.random());
-            const selected = shuffled.slice(0, Math.min(count, hiragana.length));
-            
-            // If we need more than unique Hiragana available, duplicate some
-            while (selected.length < count) {
-                const randomIndex = Math.floor(Math.random() * hiragana.length);
-                selected.push(hiragana[randomIndex]);
-            }
-            
-            return selected.sort(() => 0.5 - Math.random());
+
+        // Đối thủ (11 bot)
+        const opponents = [];
+        for (let i = 0; i < 11; i++) {
+            opponents.push({
+                x: canvas.width / 2 + Math.random() * canvas.width / 2,
+                y: Math.random() * canvas.height,
+                radius: 15,
+                color: 'red',
+                speed: 3 + Math.random() * 2,
+                dx: 0,
+                dy: 0,
+                team: 'away',
+                hasBall: false,
+                isBot: true
+            });
         }
-        
-        // Update timer
-        function updateTimer() {
-            if (!gameActive) return;
-            
-            timeLeft -= 0.1;
-            updateTimerDisplay();
-            
-            // Update progress bar
-            const percentage = (timeLeft / (35 - level * 3)) * 100;
-            progressBar.style.width = `${Math.max(0, percentage)}%`;
-            
-            // Change color when time is running out
-            if (timeLeft < 10) {
-                progressBar.style.backgroundColor = '#e17055';
-            } else {
-                progressBar.style.backgroundColor = '#00b894';
+
+        // Bóng
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 10,
+            color: 'white',
+            dx: 0,
+            dy: 0,
+            friction: 0.98,
+            owner: null
+        };
+
+        // Khung thành
+        const goals = {
+            home: {
+                x: 0,
+                y: canvas.height / 2 - 50,
+                width: 20,
+                height: 100
+            },
+            away: {
+                x: canvas.width - 20,
+                y: canvas.height / 2 - 50,
+                width: 20,
+                height: 100
             }
-            
-            if (timeLeft <= 0) {
-                timeLeft = 0;
-                updateTimerDisplay();
-                endRound(false);
-            }
+        };
+
+        // Vẽ cầu thủ
+        function drawPlayer(p) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+            ctx.closePath();
+
+            // Vẽ hướng
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x + p.dx * 10, p.y + p.dy * 10);
+            ctx.strokeStyle = 'black';
+            ctx.stroke();
+            ctx.closePath();
         }
-        
-        function updateTimerDisplay() {
-            timeDisplay.textContent = Math.max(0, Math.ceil(timeLeft));
+
+        // Vẽ bóng
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = ball.color;
+            ctx.fill();
+            ctx.closePath();
         }
-        
-        // Check if the answer is correct
-        function checkAnswer(selectedHiragana, cellElement) {
-            if (!gameActive) return;
+
+        // Vẽ khung thành
+        function drawGoals() {
+            // Khung thành đội nhà
+            ctx.fillStyle = 'white';
+            ctx.fillRect(goals.home.x, goals.home.y, goals.home.width, goals.home.height);
             
-            if (selectedHiragana === currentHiragana) {
-                // Correct answer
-                correctSound.play();
-                cellElement.classList.add('correct');
-                combo++;
-                maxCombo = Math.max(maxCombo, combo);
-                
-                // Calculate score with combo bonus
-                const comboBonus = Math.floor(combo / 3);
-                score += (level * 10) + (comboBonus * 5);
-                scoreDisplay.textContent = score;
-                
-                // Check for level up (every 100 points)
-                const newLevel = Math.floor(score / 100) + 1;
-                if (newLevel > level) {
-                    level = newLevel;
-                    levelDisplay.textContent = level;
-                    message.textContent = `Level Up! Now level ${level}`;
-                    message.style.color = '#0984e3';
+            // Khung thành đội khách
+            ctx.fillRect(goals.away.x, goals.away.y, goals.away.width, goals.away.height);
+        }
+
+        // Vẽ sân
+        function drawField() {
+            // Đường giữa sân
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.closePath();
+            
+            // Vòng tròn giữa sân
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, canvas.height / 2, 70, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        // Kiểm tra va chạm
+        function checkCollision(obj1, obj2) {
+            const dx = obj1.x - obj2.x;
+            const dy = obj1.y - obj2.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance < obj1.radius + obj2.radius;
+        }
+
+        // Cập nhật vị trí
+        function update() {
+            // Di chuyển người chơi
+            player.x += player.dx;
+            player.y += player.dy;
+
+            // Giới hạn người chơi trong sân
+            if (player.x - player.radius < 0) player.x = player.radius;
+            if (player.x + player.radius > canvas.width) player.x = canvas.width - player.radius;
+            if (player.y - player.radius < 0) player.y = player.radius;
+            if (player.y + player.radius > canvas.height) player.y = canvas.height - player.radius;
+
+            // Di chuyển đồng đội
+            teammates.forEach(teammate => {
+                // AI đơn giản cho đồng đội
+                if (teammate.hasBall) {
+                    // Nếu có bóng, chạy về phía khung thành đối phương
+                    teammate.dx = 1;
+                    teammate.dy = (goals.away.y + goals.away.height/2 - teammate.y) * 0.01;
                 } else {
-                    const bonusText = comboBonus > 0 ? ` (+${comboBonus * 5} combo bonus)` : '';
-                    message.textContent = `Correct! +${level * 10} points${bonusText}`;
-                    message.style.color = '#00b894';
+                    // Nếu không có bóng, di chuyển ngẫu nhiên hoặc về phía bóng
+                    if (Math.random() < 0.02) {
+                        teammate.dx = (Math.random() - 0.5) * 2;
+                        teammate.dy = (Math.random() - 0.5) * 2;
+                    }
+                    
+                    // Nếu bóng gần, chạy về phía bóng
+                    const ballDist = Math.sqrt(Math.pow(teammate.x - ball.x, 2) + Math.pow(teammate.y - ball.y, 2));
+                    if (ballDist < 200 && !ball.owner) {
+                        teammate.dx = (ball.x - teammate.x) * 0.02;
+                        teammate.dy = (ball.y - teammate.y) * 0.02;
+                    }
                 }
                 
-                endRound(true);
-            } else {
-                // Wrong answer
-                wrongSound.play();
-                cellElement.classList.add('wrong');
-                combo = 0;
-                message.textContent = 'Wrong! Try again';
-                message.style.color = '#d63031';
+                // Chuẩn hóa tốc độ
+                const speed = Math.sqrt(teammate.dx * teammate.dx + teammate.dy * teammate.dy);
+                if (speed > teammate.speed) {
+                    teammate.dx = teammate.dx / speed * teammate.speed;
+                    teammate.dy = teammate.dy / speed * teammate.speed;
+                }
                 
-                // Penalty - reduce time
-                timeLeft = Math.max(1, timeLeft - 2);
-                updateTimerDisplay();
+                teammate.x += teammate.dx;
+                teammate.y += teammate.dy;
                 
-                // Remove animation class after it ends
-                setTimeout(() => {
-                    cellElement.classList.remove('wrong');
-                }, 500);
-            }
-        }
-        
-        // End the current round
-        function endRound(success) {
-            gameActive = false;
-            clearInterval(timer);
-            
-            if (!success) {
-                timeoutSound.play();
-                message.textContent = `Time's up! Game over (Max Combo: ${maxCombo})`;
-                message.style.color = '#d63031';
-                
-                // Highlight the correct answer
-                cells.forEach(cell => {
-                    if (cell.dataset.hiragana === currentHiragana) {
-                        cell.classList.add('correct');
+                // Giới hạn trong sân
+                if (teammate.x - teammate.radius < 0) teammate.x = teammate.radius;
+                if (teammate.x + teammate.radius > canvas.width) teammate.x = canvas.width - teammate.radius;
+                if (teammate.y - teammate.radius < 0) teammate.y = teammate.radius;
+                if (teammate.y + teammate.radius > canvas.height) teammate.y = canvas.height - teammate.radius;
+            });
+
+            // Di chuyển đối thủ
+            opponents.forEach(opponent => {
+                // AI đơn giản cho đối thủ
+                if (opponent.hasBall) {
+                    // Nếu có bóng, chạy về phía khung thành nhà
+                    opponent.dx = -1;
+                    opponent.dy = (goals.home.y + goals.home.height/2 - opponent.y) * 0.01;
+                } else {
+                    // Nếu không có bóng, di chuyển ngẫu nhiên hoặc về phía bóng
+                    if (Math.random() < 0.02) {
+                        opponent.dx = (Math.random() - 0.5) * 2;
+                        opponent.dy = (Math.random() - 0.5) * 2;
                     }
-                });
+                    
+                    // Nếu bóng gần, chạy về phía bóng
+                    const ballDist = Math.sqrt(Math.pow(opponent.x - ball.x, 2) + Math.pow(opponent.y - ball.y, 2));
+                    if (ballDist < 200 && !ball.owner) {
+                        opponent.dx = (ball.x - opponent.x) * 0.02;
+                        opponent.dy = (ball.y - opponent.y) * 0.02;
+                    }
+                }
                 
-                // Reset combo
-                combo = 0;
-                maxCombo = 0;
+                // Chuẩn hóa tốc độ
+                const speed = Math.sqrt(opponent.dx * opponent.dx + opponent.dy * opponent.dy);
+                if (speed > opponent.speed) {
+                    opponent.dx = opponent.dx / speed * opponent.speed;
+                    opponent.dy = opponent.dy / speed * opponent.speed;
+                }
+                
+                opponent.x += opponent.dx;
+                opponent.y += opponent.dy;
+                
+                // Giới hạn trong sân
+                if (opponent.x - opponent.radius < 0) opponent.x = opponent.radius;
+                if (opponent.x + opponent.radius > canvas.width) opponent.x = canvas.width - opponent.radius;
+                if (opponent.y - opponent.radius < 0) opponent.y = opponent.radius;
+                if (opponent.y + opponent.radius > canvas.height) opponent.y = canvas.height - opponent.radius;
+            });
+
+            // Di chuyển bóng
+            if (!ball.owner) {
+                ball.x += ball.dx;
+                ball.y += ball.dy;
+                
+                ball.dx *= ball.friction;
+                ball.dy *= ball.friction;
+                
+                // Dừng bóng nếu quá chậm
+                if (Math.abs(ball.dx) < 0.1) ball.dx = 0;
+                if (Math.abs(ball.dy) < 0.1) ball.dy = 0;
+                
+                // Giới hạn bóng trong sân
+                if (ball.x - ball.radius < 0) {
+                    ball.x = ball.radius;
+                    ball.dx *= -0.8;
+                }
+                if (ball.x + ball.radius > canvas.width) {
+                    ball.x = canvas.width - ball.radius;
+                    ball.dx *= -0.8;
+                }
+                if (ball.y - ball.radius < 0) {
+                    ball.y = ball.radius;
+                    ball.dy *= -0.8;
+                }
+                if (ball.y + ball.radius > canvas.height) {
+                    ball.y = canvas.height - ball.radius;
+                    ball.dy *= -0.8;
+                }
+            } else {
+                // Bóng theo chủ sở hữu
+                if (ball.owner.team === 'home') {
+                    ball.x = ball.owner.x + ball.owner.dx * 2;
+                    ball.y = ball.owner.y + ball.owner.dy * 2;
+                } else {
+                    ball.x = ball.owner.x + ball.owner.dx * 2;
+                    ball.y = ball.owner.y + ball.owner.dy * 2;
+                }
+            }
+
+            // Kiểm tra va chạm với bóng
+            function checkBallCollision(entity) {
+                if (checkCollision(entity, ball)) {
+                    if (!ball.owner || (ball.owner && ball.owner.team !== entity.team)) {
+                        // Nếu bóng không có chủ hoặc chủ là đối phương, chiếm bóng
+                        if (ball.owner) ball.owner.hasBall = false;
+                        ball.owner = entity;
+                        entity.hasBall = true;
+                        
+                        // Nếu đang di chuyển, đá bóng
+                        if (entity.dx !== 0 || entity.dy !== 0) {
+                            const power = Math.sqrt(entity.dx * entity.dx + entity.dy * entity.dy);
+                            ball.dx = entity.dx * power * 2;
+                            ball.dy = entity.dy * power * 2;
+                            ball.owner = null;
+                            entity.hasBall = false;
+                        }
+                    }
+                }
+            }
+
+            // Kiểm tra va chạm với bóng cho tất cả cầu thủ
+            checkBallCollision(player);
+            teammates.forEach(checkBallCollision);
+            opponents.forEach(checkBallCollision);
+
+            // Kiểm tra ghi bàn
+            if (ball.x - ball.radius < goals.home.x + goals.home.width && 
+                ball.y > goals.home.y && ball.y < goals.home.y + goals.home.height) {
+                // Đội khách ghi bàn
+                awayScore++;
+                scoreBoard.textContent = `Đội bạn: ${homeScore} - ${awayScore} : Đội đối phương`;
+                resetAfterGoal();
             }
             
-            // Start a new round after a delay
-            setTimeout(initGame, success ? 1500 : 3000);
-        }
-        
-        // Drag and drop functionality for desktop
-        ball.addEventListener('dragstart', function(e) {
-            if (!gameActive) {
-                e.preventDefault();
-                return;
+            if (ball.x + ball.radius > goals.away.x && 
+                ball.y > goals.away.y && ball.y < goals.away.y + goals.away.height) {
+                // Đội nhà ghi bàn
+                homeScore++;
+                scoreBoard.textContent = `Đội bạn: ${homeScore} - ${awayScore} : Đội đối phương`;
+                resetAfterGoal();
             }
-            e.dataTransfer.setData('text/plain', currentHiragana);
+        }
+
+        // Reset sau khi ghi bàn
+        function resetAfterGoal() {
+            // Reset vị trí bóng
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.dx = 0;
+            ball.dy = 0;
+            ball.owner = null;
+            
+            // Reset vị trí người chơi
+            player.x = canvas.width / 4;
+            player.y = canvas.height / 2;
+            player.dx = 0;
+            player.dy = 0;
+            player.hasBall = false;
+            
+            // Reset đồng đội
+            teammates.forEach(teammate => {
+                teammate.x = Math.random() * canvas.width / 2;
+                teammate.y = Math.random() * canvas.height;
+                teammate.dx = 0;
+                teammate.dy = 0;
+                teammate.hasBall = false;
+            });
+            
+            // Reset đối thủ
+            opponents.forEach(opponent => {
+                opponent.x = canvas.width / 2 + Math.random() * canvas.width / 2;
+                opponent.y = Math.random() * canvas.height;
+                opponent.dx = 0;
+                opponent.dy = 0;
+                opponent.hasBall = false;
+            });
+        }
+
+        // Vẽ trò chơi
+        function draw() {
+            // Xóa canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Vẽ sân
+            drawField();
+            
+            // Vẽ khung thành
+            drawGoals();
+            
+            // Vẽ đồng đội
+            teammates.forEach(drawPlayer);
+            
+            // Vẽ đối thủ
+            opponents.forEach(drawPlayer);
+            
+            // Vẽ người chơi
+            drawPlayer(player);
+            
+            // Vẽ bóng
+            drawBall();
+        }
+
+        // Vòng lặp trò chơi
+        function gameLoop() {
+            if (gameRunning) {
+                update();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Bắt đầu trò chơi
+        gameLoop();
+
+        // Điều khiển
+        const keys = {
+            w: false,
+            a: false,
+            s: false,
+            d: false,
+            up: false,
+            down: false,
+            left: false,
+            right: false,
+            space: false
+        };
+
+        // Bắt sự kiện bàn phím
+        window.addEventListener('keydown', (e) => {
+            switch (e.key.toLowerCase()) 
+                case 'w': keys.w = true; break;
+                case 'a': keys.a = true; break;
+                case 's': keys.s = true; break;
+                case 'd': keys.d = true; break;
+                case 'arrowup': keys.up = true; break;
+                case 'arrowdown': keys.down = true; break;
+                case 'arrowleft': keys.left = true; break;
+                case 'arrowright': keys.right = true; break;
+                case ' ': keys.space = true; break;
+            }
+            updatePlayerMovement();
         });
-        
-        // Prevent default drag behavior
-        document.addEventListener('dragover', function(e) {
-            e.preventDefault();
+
+        window.addEventListener('keyup', (e) => {
+            switch (e.key.toLowerCase()) {
+                case 'w': keys.w = false; break;
+                case 'a': keys.a = false; break;
+                case 's': keys.s = false; break;
+                case 'd': keys.d = false; break;
+                case 'arrowup': keys.up = false; break;
+                case 'arrowdown': keys.down = false; break;
+                case 'arrowleft': keys.left = false; break;
+                case 'arrowright': keys.right = false; break;
+                case ' ': 
+                    keys.space = false; 
+                    if (player.hasBall) {
+                        // Đá bóng khi nhả phím space
+                        const power = 10;
+                        ball.dx = player.dx * power;
+                        ball.dy = player.dy * power;
+                        ball.owner = null;
+                        player.hasBall = false;
+                    }
+                    break;
+            }
+            updatePlayerMovement();
         });
-        
-        document.addEventListener('drop', function(e) {
-            e.preventDefault();
+
+        // Cập nhật di chuyển người chơi
+        function updatePlayerMovement() {
+            player.dx = 0;
+            player.dy = 0;
+            
+            // Di chuyển
+            if (keys.w) player.dy = -player.speed;
+            if (keys.s) player.dy = player.speed;
+            if (keys.a) player.dx = -player.speed;
+            if (keys.d) player.dx = player.speed;
+            
+            // Nếu di chuyển chéo, giảm tốc độ để không đi nhanh hơn
+            if (player.dx !== 0 && player.dy !== 0) {
+                player.dx *= 0.7;
+                player.dy *= 0.7;
+            }
+            
+            // Thay đổi hướng (không ảnh hưởng đến di chuyển)
+            if (keys.up) player.dy = -1;
+            else if (keys.down) player.dy = 1;
+            if (keys.left) player.dx = -1;
+            else if (keys.right) player.dx = 1;
+            
+            // Nếu chỉ thay đổi hướng (không di chuyển), chuẩn hóa vector
+            if ((keys.up || keys.down || keys.left || keys.right) && 
+                !(keys.w || keys.a || keys.s || keys.d)) {
+                const length = Math.sqrt(player.dx * player.dx + player.dy * player.dy);
+                if (length > 0) {
+                    player.dx = player.dx / length;
+                    player.dy = player.dy / length;
+                }
+            }
+        }
+
+        // Xử lý thay đổi kích thước cửa sổ
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // Cập nhật vị trí khung thành
+            goals.home.y = canvas.height / 2 - 50;
+            goals.away.y = canvas.height / 2 - 50;
         });
-        
-        // Start the game
-        initGame();
     </script>
 </body>
 </html>
