@@ -24,6 +24,38 @@
             font-weight: bold;
             margin: 10px;
         }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            z-index: 100;
+            text-align: center;
+            width: 300px;
+        }
+        #gameOver h3 {
+            color: red;
+            font-size: 30px;
+            margin-top: 0;
+        }
+        #gameOver button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        #gameOver button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -32,10 +64,19 @@
     <canvas id="game" width="400" height="400"></canvas>
     <p>Dùng phím mũi tên để di chuyển</p>
 
+    <div id="gameOver">
+        <h3>GAME OVER!</h3>
+        <p>Điểm của bạn: <span id="finalScore">0</span></p>
+        <p>Nhấn F5 hoặc nút bên dưới để chơi lại</p>
+        <button onclick="restartGame()">Chơi lại</button>
+    </div>
+
     <script>
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
         const scoreDisplay = document.getElementById('scoreDisplay');
+        const finalScore = document.getElementById('finalScore');
+        const gameOverScreen = document.getElementById('gameOver');
         const box = 20; // Kích thước ô vuông (20x20)
         let snake = [{x: 10 * box, y: 10 * box}]; // Bắt đầu ở giữa màn hình
         let food = generateFood();
@@ -44,6 +85,7 @@
         let score = 0;
         let gameSpeed = 200; // 200ms = 5 lần/giây (tương đương 2 ô/giây khi di chuyển liên tục)
         let gameInterval;
+        let gameActive = true;
 
         // Tạo thức ăn mới, đảm bảo không trùng với thân rắn
         function generateFood() {
@@ -59,6 +101,8 @@
 
         // Điều khiển
         document.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            
             if (e.key === 'ArrowUp' && direction !== 'DOWN') nextDirection = 'UP';
             if (e.key === 'ArrowDown' && direction !== 'UP') nextDirection = 'DOWN';
             if (e.key === 'ArrowLeft' && direction !== 'RIGHT') nextDirection = 'LEFT';
@@ -117,8 +161,33 @@
             }
         }
 
+        // Hiển thị màn hình kết thúc
+        function showGameOver() {
+            gameActive = false;
+            finalScore.textContent = score;
+            gameOverScreen.style.display = 'block';
+        }
+
+        // Khởi động lại game
+        function restartGame() {
+            snake = [{x: 10 * box, y: 10 * box}];
+            food = generateFood();
+            direction = null;
+            nextDirection = null;
+            score = 0;
+            scoreDisplay.textContent = '0';
+            gameSpeed = 200;
+            gameActive = true;
+            gameOverScreen.style.display = 'none';
+            
+            clearInterval(gameInterval);
+            gameInterval = setInterval(gameLoop, gameSpeed);
+        }
+
         // Game loop
         function gameLoop() {
+            if (!gameActive) return;
+            
             // Cập nhật hướng đi
             if (nextDirection) {
                 direction = nextDirection;
@@ -142,8 +211,8 @@
             if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || 
                 snake.some(segment => segment.x === head.x && segment.y === head.y)) {
                 clearInterval(gameInterval);
-                alert('Game Over! Điểm: ' + score);
-                location.reload();
+                showGameOver();
+                return;
             }
             
             snake.unshift(head);
@@ -169,6 +238,14 @@
 
         // Bắt đầu game
         gameInterval = setInterval(gameLoop, gameSpeed);
+
+        // Xử lý phím F5
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F5') {
+                e.preventDefault(); // Ngăn hành động mặc định của F5 (refresh trang)
+                restartGame();
+            }
+        });
     </script>
 </body>
 </html>
