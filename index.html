@@ -1,165 +1,246 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Hardest Game: 3D Voxel Racer</title>
+    <title>Ball Game</title>
     <style>
-        body { margin: 0; overflow: hidden; background: black; }
-        canvas { display: block; }
-        #info { position: absolute; top: 10px; left: 10px; color: white; font-family: Arial; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            display: block;
+            background-color: #222;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 20px;
+        }
+        #instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <div id="info">Arrow keys to drive. Try not to crash!</div>
     <canvas id="gameCanvas"></canvas>
+    <div id="score">Score: 0</div>
+    <div id="instructions">
+        <h2>Ball Game</h2>
+        <p>Use arrow keys or WASD to move the ball</p>
+        <p>Avoid the red obstacles</p>
+        <p>Click to start</p>
+    </div>
 
     <script>
-        // ====== SETUP ======
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const instructionsElement = document.getElementById('instructions');
+        
+        // Set canvas size
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-
-        // ====== GAME STATE ======
-        const player = {
-            x: 100, y: 300, angle: 0, speed: 0,
-            turnSpeed: 0.03, maxSpeed: 5
-        };
-        const track = generateTrack();
-        const enemies = [{ x: 150, y: 250, angle: 0, speed: 2 }];
+        
+        // Game variables
+        let gameRunning = false;
         let score = 0;
-
-        // Generate a winding procedural track
-        function generateTrack() {
-            const track = [];
-            for (let i = 0; i < 1000; i++) {
-                track.push({
-                    x: Math.sin(i * 0.1) * 200 + canvas.width / 2,
-                    y: i * 10
-                });
+        let speed = 3;
+        
+        // Player ball
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 20,
+            color: '#3498db',
+            dx: 0,
+            dy: 0,
+            speed: 5
+        };
+        
+        // Obstacles
+        let obstacles = [];
+        
+        // Keys
+        const keys = {
+            ArrowUp: false,
+            ArrowDown: false,
+            ArrowLeft: false,
+            ArrowRight: false,
+            w: false,
+            a: false,
+            s: false,
+            d: false
+        };
+        
+        // Event listeners
+        window.addEventListener('keydown', (e) => {
+            if (keys.hasOwnProperty(e.key)) {
+                keys[e.key] = true;
             }
-            return track;
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            if (keys.hasOwnProperty(e.key)) {
+                keys[e.key] = false;
+            }
+        });
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        canvas.addEventListener('click', () => {
+            if (!gameRunning) {
+                startGame();
+            }
+        });
+        
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            speed = 3;
+            player.x = canvas.width / 2;
+            player.y = canvas.height / 2;
+            obstacles = [];
+            instructionsElement.style.display = 'none';
+            scoreElement.textContent = 'Score: 0';
+            animate();
         }
-
-        // ====== 3D RENDERING (RAYCASTING) ======
-        function render3D() {
-            // Sky
-            ctx.fillStyle = "#87CEEB";
-            ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
-
-            // Ground
-            ctx.fillStyle = "#2E8B57";
-            ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
-
-            // Walls (raycasting)
-            for (let x = 0; x < canvas.width; x++) {
-                const rayAngle = player.angle - 0.5 + x / canvas.width;
-                let distance = 0;
-                let hitWall = false;
-
-                while (!hitWall && distance < 1000) {
-                    distance += 2;
-                    const rayX = player.x + Math.cos(rayAngle) * distance;
-                    const rayY = player.y + Math.sin(rayAngle) * distance;
-
-                    // Track collision check
-                    const trackSegment = track[Math.floor(rayY / 10) % track.length];
-                    if (Math.abs(rayX - trackSegment.x) < 30) {
-                        hitWall = true;
-                        const wallHeight = (canvas.height * 50) / distance;
-                        ctx.fillStyle = `hsl(${200 - distance / 2}, 100%, 50%)`;
-                        ctx.fillRect(
-                            x,
-                            canvas.height / 2 - wallHeight / 2,
-                            2,
-                            wallHeight
-                        );
+        
+        function createObstacle() {
+            const size = Math.random() * 30 + 20;
+            let x, y;
+            
+            // Place obstacle outside canvas
+            if (Math.random() < 0.5) {
+                x = Math.random() < 0.5 ? -size : canvas.width + size;
+                y = Math.random() * canvas.height;
+            } else {
+                x = Math.random() * canvas.width;
+                y = Math.random() < 0.5 ? -size : canvas.height + size;
+            }
+            
+            obstacles.push({
+                x: x,
+                y: y,
+                radius: size,
+                color: '#e74c3c',
+                dx: (canvas.width/2 - x) / 100 * speed,
+                dy: (canvas.height/2 - y) / 100 * speed
+            });
+        }
+        
+        function updatePlayer() {
+            // Reset movement
+            player.dx = 0;
+            player.dy = 0;
+            
+            // Handle key presses
+            if (keys.ArrowUp || keys.w) player.dy = -player.speed;
+            if (keys.ArrowDown || keys.s) player.dy = player.speed;
+            if (keys.ArrowLeft || keys.a) player.dx = -player.speed;
+            if (keys.ArrowRight || keys.d) player.dx = player.speed;
+            
+            // Normalize diagonal movement
+            if (player.dx !== 0 && player.dy !== 0) {
+                player.dx *= 0.7071;
+                player.dy *= 0.7071;
+            }
+            
+            // Update position with bounds checking
+            player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x + player.dx));
+            player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y + player.dy));
+        }
+        
+        function updateObstacles() {
+            // Create new obstacles occasionally
+            if (Math.random() < 0.02) {
+                createObstacle();
+            }
+            
+            // Update obstacle positions
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.x += obs.dx;
+                obs.y += obs.dy;
+                
+                // Remove if out of bounds
+                if (obs.x < -obs.radius * 2 || obs.x > canvas.width + obs.radius * 2 ||
+                    obs.y < -obs.radius * 2 || obs.y > canvas.height + obs.radius * 2) {
+                    obstacles.splice(i, 1);
+                    score++;
+                    scoreElement.textContent = `Score: ${score}`;
+                    
+                    // Increase difficulty
+                    if (score % 5 === 0) {
+                        speed += 0.2;
                     }
+                }
+                
+                // Check collision with player
+                const dx = player.x - obs.x;
+                const dy = player.y - obs.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < player.radius + obs.radius) {
+                    gameOver();
                 }
             }
         }
-
-        // ====== 2D MINIMAP (DEBUG) ======
-        function renderMinimap() {
-            const scale = 0.2;
-            ctx.save();
-            ctx.translate(20, canvas.height - 150);
-            ctx.scale(scale, scale);
-
-            // Draw track
-            ctx.strokeStyle = "white";
-            ctx.beginPath();
-            track.forEach((segment, i) => {
-                if (i === 0) ctx.moveTo(segment.x, segment.y);
-                else ctx.lineTo(segment.x, segment.y);
-            });
-            ctx.stroke();
-
-            // Draw player
-            ctx.fillStyle = "red";
-            ctx.beginPath();
-            ctx.arc(player.x, player.y, 5, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Draw enemies
-            ctx.fillStyle = "blue";
-            enemies.forEach(enemy => {
-                ctx.beginPath();
-                ctx.arc(enemy.x, enemy.y, 5, 0, Math.PI * 2);
-                ctx.fill();
-            });
-
-            ctx.restore();
+        
+        function gameOver() {
+            gameRunning = false;
+            instructionsElement.innerHTML = `
+                <h2>Game Over</h2>
+                <p>Your score: ${score}</p>
+                <p>Click to play again</p>
+            `;
+            instructionsElement.style.display = 'block';
         }
-
-        // ====== PHYSICS & UPDATES ======
-        function update() {
-            // Player controls
-            if (keys.ArrowUp) player.speed = Math.min(player.speed + 0.05, player.maxSpeed);
-            if (keys.ArrowDown) player.speed = Math.max(player.speed - 0.05, -player.maxSpeed / 2);
-            if (keys.ArrowLeft) player.angle -= player.turnSpeed * player.speed;
-            if (keys.ArrowRight) player.angle += player.turnSpeed * player.speed;
-
-            // Friction
-            player.speed *= 0.95;
-            if (Math.abs(player.speed) < 0.01) player.speed = 0;
-
-            // Move player
-            player.x += Math.cos(player.angle) * player.speed;
-            player.y += Math.sin(player.angle) * player.speed;
-
-            // AI opponents
-            enemies.forEach(enemy => {
-                const targetSegment = track[Math.floor(enemy.y / 10) % track.length];
-                enemy.angle = Math.atan2(targetSegment.x - enemy.x, targetSegment.y - enemy.y);
-                enemy.x += Math.cos(enemy.angle) * enemy.speed;
-                enemy.y += Math.sin(enemy.angle) * enemy.speed;
-            });
-
-            // Score (distance traveled)
-            score = Math.floor(player.y / 10);
-        }
-
-        // ====== INPUT HANDLING ======
-        const keys = {};
-        window.addEventListener("keydown", e => keys[e.code] = true);
-        window.addEventListener("keyup", e => keys[e.code] = false);
-
-        // ====== GAME LOOP ======
-        function gameLoop() {
+        
+        function draw() {
+            // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            render3D();
-            renderMinimap();
-            update();
-
-            // Display score
-            ctx.fillStyle = "white";
-            ctx.font = "20px Arial";
-            ctx.fillText(`Score: ${score}`, 20, 40);
-
-            requestAnimationFrame(gameLoop);
+            
+            // Draw player
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = player.color;
+            ctx.fill();
+            ctx.closePath();
+            
+            // Draw obstacles
+            obstacles.forEach(obs => {
+                ctx.beginPath();
+                ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
+                ctx.fillStyle = obs.color;
+                ctx.fill();
+                ctx.closePath();
+            });
         }
-
-        gameLoop();
+        
+        function animate() {
+            if (!gameRunning) return;
+            
+            updatePlayer();
+            updateObstacles();
+            draw();
+            
+            requestAnimationFrame(animate);
+        }
     </script>
 </body>
 </html>
