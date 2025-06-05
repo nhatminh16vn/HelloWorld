@@ -1,550 +1,165 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bóng đá 3D</title>
+    <title>Hardest Game: 3D Voxel Racer</title>
     <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            font-family: Arial, sans-serif;
-        }
-        #info {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            color: white;
-            background-color: rgba(0,0,0,0.7);
-            padding: 10px;
-            border-radius: 5px;
-            z-index: 100;
-        }
-        #controls {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            color: white;
-            background-color: rgba(0,0,0,0.7);
-            padding: 10px;
-            border-radius: 5px;
-            z-index: 100;
-        }
+        body { margin: 0; overflow: hidden; background: black; }
+        canvas { display: block; }
+        #info { position: absolute; top: 10px; left: 10px; color: white; font-family: Arial; }
     </style>
 </head>
 <body>
-    <div id="info">Đội bạn: 0 - 0 : Đối phương</div>
-    <div id="controls">
-        Di chuyển: W,A,S,D | Đá bóng: SPACE | Xoay camera: KÉO CHUỘT
-    </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
+    <div id="info">Arrow keys to drive. Try not to crash!</div>
+    <canvas id="gameCanvas"></canvas>
+
     <script>
-        // Khởi tạo scene
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB);
-        
-        // Camera
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 30, 50);
-        
-        // Renderer
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        document.body.appendChild(renderer.domElement);
-        
-        // Điều khiển camera
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.target.set(0, 0, 0);
-        controls.minDistance = 20;
-        controls.maxDistance = 100;
-        
-        // Ánh sáng
-        const ambientLight = new THREE.AmbientLight(0x404040);
-        scene.add(ambientLight);
-        
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(1, 1, 1);
-        directionalLight.castShadow = true;
-        scene.add(directionalLight);
-        
-        // Tạo sân bóng
-        const fieldWidth = 80;
-        const fieldLength = 120;
-        const fieldGeometry = new THREE.PlaneGeometry(fieldLength, fieldWidth);
-        const fieldMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x2E8B57, 
-            side: THREE.DoubleSide 
-        });
-        const field = new THREE.Mesh(fieldGeometry, fieldMaterial);
-        field.rotation.x = -Math.PI / 2;
-        field.receiveShadow = true;
-        scene.add(field);
-        
-        // Vẽ đường kẻ sân
-        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
-        
-        // Vòng tròn giữa sân
-        const circleGeometry = new THREE.BufferGeometry();
-        const circlePoints = [];
-        for (let i = 0; i <= 64; i++) {
-            const angle = (i / 64) * Math.PI * 2;
-            circlePoints.push(new THREE.Vector3(Math.cos(angle) * 10, 0.1, Math.sin(angle) * 10));
-        }
-        circleGeometry.setFromPoints(circlePoints);
-        const circle = new THREE.Line(circleGeometry, lineMaterial);
-        scene.add(circle);
-        
-        // Đường giữa sân
-        const midLineGeometry = new THREE.BufferGeometry();
-        midLineGeometry.setFromPoints([
-            new THREE.Vector3(0, 0.1, -fieldWidth/2),
-            new THREE.Vector3(0, 0.1, fieldWidth/2)
-        ]);
-        const midLine = new THREE.Line(midLineGeometry, lineMaterial);
-        scene.add(midLine);
-        
-        // Khung thành
-        function createGoal(x, z, rotationY) {
-            const postRadius = 0.5;
-            const postHeight = 2.5;
-            const crossbarLength = 7.5;
-            const netDepth = 2;
-            
-            // Tạo khung
-            const goalGroup = new THREE.Group();
-            goalGroup.position.set(x, 0, z);
-            goalGroup.rotation.y = rotationY;
-            
-            // Cột dọc
-            const postMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-            const postGeometry = new THREE.CylinderGeometry(postRadius, postRadius, postHeight, 16);
-            
-            const leftPost = new THREE.Mesh(postGeometry, postMaterial);
-            leftPost.position.set(0, postHeight/2, -crossbarLength/2);
-            leftPost.castShadow = true;
-            goalGroup.add(leftPost);
-            
-            const rightPost = new THREE.Mesh(postGeometry, postMaterial);
-            rightPost.position.set(0, postHeight/2, crossbarLength/2);
-            rightPost.castShadow = true;
-            goalGroup.add(rightPost);
-            
-            // Xà ngang
-            const crossbarGeometry = new THREE.CylinderGeometry(postRadius, postRadius, crossbarLength, 16);
-            const crossbar = new THREE.Mesh(crossbarGeometry, postMaterial);
-            crossbar.position.set(0, postHeight, 0);
-            crossbar.rotation.y = Math.PI / 2;
-            crossbar.castShadow = true;
-            goalGroup.add(crossbar);
-            
-            // Lưới
-            const netMaterial = new THREE.MeshBasicMaterial({ 
-                color: 0xffffff, 
-                wireframe: true,
-                transparent: true,
-                opacity: 0.7
-            });
-            const netGeometry = new THREE.BoxGeometry(netDepth, postHeight, crossbarLength);
-            const net = new THREE.Mesh(netGeometry, netMaterial);
-            net.position.set(-netDepth/2, postHeight/2, 0);
-            goalGroup.add(net);
-            
-            scene.add(goalGroup);
-            
-            return {
-                position: new THREE.Vector3(x, 0, z),
-                width: crossbarLength,
-                height: postHeight,
-                rotation: rotationY
-            };
-        }
-        
-        const homeGoal = createGoal(-fieldLength/2, 0, 0);
-        const awayGoal = createGoal(fieldLength/2, 0, Math.PI);
-        
-        // Tạo bóng
-        const ballGeometry = new THREE.SphereGeometry(1, 32, 32);
-        const ballMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xffffff,
-            map: new THREE.TextureLoader().load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg')
-        });
-        const ball = new THREE.Mesh(ballGeometry, ballMaterial);
-        ball.castShadow = true;
-        ball.position.set(0, 1, 0);
-        scene.add(ball);
-        
-        // Vật lý bóng
-        const ballPhysics = {
-            velocity: new THREE.Vector3(),
-            friction: 0.98,
-            gravity: 0.2,
-            onGround: true,
-            owner: null
+        // ====== SETUP ======
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // ====== GAME STATE ======
+        const player = {
+            x: 100, y: 300, angle: 0, speed: 0,
+            turnSpeed: 0.03, maxSpeed: 5
         };
-        
-        // Tạo cầu thủ
-        function createPlayer(x, z, color, isBot = false) {
-            const playerGroup = new THREE.Group();
-            playerGroup.position.set(x, 0, z);
-            
-            // Thân người
-            const bodyGeometry = new THREE.CylinderGeometry(1, 1, 2, 16);
-            const bodyMaterial = new THREE.MeshStandardMaterial({ color: color });
-            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-            body.position.y = 1;
-            body.castShadow = true;
-            playerGroup.add(body);
-            
-            // Đầu
-            const headGeometry = new THREE.SphereGeometry(0.8, 16, 16);
-            const headMaterial = new THREE.MeshStandardMaterial({ color: 0xFFD700 });
-            const head = new THREE.Mesh(headGeometry, headMaterial);
-            head.position.y = 2.5;
-            playerGroup.add(head);
-            
-            // Chân (đơn giản)
-            const legGeometry = new THREE.BoxGeometry(0.5, 1, 0.5);
-            const legMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
-            
-            const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
-            leftLeg.position.set(-0.5, 0.5, 0);
-            playerGroup.add(leftLeg);
-            
-            const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
-            rightLeg.position.set(0.5, 0.5, 0);
-            playerGroup.add(rightLeg);
-            
-            scene.add(playerGroup);
-            
-            return {
-                mesh: playerGroup,
-                speed: isBot ? 0.1 : 0.2,
-                direction: new THREE.Vector3(0, 0, 1),
-                hasBall: false,
-                isBot: isBot,
-                team: color === 0x0000FF ? 'home' : 'away',
-                body: body,
-                legs: [leftLeg, rightLeg]
-            };
-        }
-        
-        // Người chơi
-        const player = createPlayer(-10, 0, 0x0000FF);
-        
-        // Đồng đội (10 bot)
-        const teammates = [];
-        for (let i = 0; i < 10; i++) {
-            const x = -20 + Math.random() * 20;
-            const z = -20 + Math.random() * 40;
-            teammates.push(createPlayer(x, z, 0x0000FF, true));
-        }
-        
-        // Đối thủ (11 bot)
-        const opponents = [];
-        for (let i = 0; i < 11; i++) {
-            const x = 10 + Math.random() * 20;
-            const z = -20 + Math.random() * 40;
-            opponents.push(createPlayer(x, z, 0xFF0000, true));
-        }
-        
-        // Điểm số
-        let homeScore = 0;
-        let awayScore = 0;
-        const infoElement = document.getElementById('info');
-        
-        // Điều khiển
-        const keys = {
-            w: false,
-            a: false,
-            s: false,
-            d: false,
-            space: false
-        };
-        
-        document.addEventListener('keydown', (e) => {
-            switch (e.key.toLowerCase()) {
-                case 'w': keys.w = true; break;
-                case 'a': keys.a = true; break;
-                case 's': keys.s = true; break;
-                case 'd': keys.d = true; break;
-                case ' ': keys.space = true; break;
-            }
-        });
-        
-        document.addEventListener('keyup', (e) => {
-            switch (e.key.toLowerCase()) {
-                case 'w': keys.w = false; break;
-                case 'a': keys.a = false; break;
-                case 's': keys.s = false; break;
-                case 'd': keys.d = false; break;
-                case ' ': 
-                    keys.space = false; 
-                    if (player.hasBall) {
-                        // Đá bóng
-                        const kickPower = 1.5;
-                        ballPhysics.velocity.x = player.direction.x * kickPower;
-                        ballPhysics.velocity.z = player.direction.z * kickPower;
-                        ballPhysics.velocity.y = 0.5;
-                        ballPhysics.onGround = false;
-                        ballPhysics.owner = null;
-                        player.hasBall = false;
-                    }
-                    break;
-            }
-        });
-        
-        // Kiểm tra va chạm
-        function checkCollision(obj1, obj2, distance) {
-            const pos1 = obj1.position || obj1.mesh.position;
-            const pos2 = obj2.position || obj2.mesh.position;
-            return pos1.distanceTo(pos2) < distance;
-        }
-        
-        // AI cho bot
-        function updateBotAI(bot, target, goal) {
-            if (bot.hasBall) {
-                // Nếu có bóng, chạy về phía khung thành đối phương
-                bot.direction.subVectors(goal.position, bot.mesh.position).normalize();
-                
-                // Thỉnh thoảng đá bóng
-                if (Math.random() < 0.01) {
-                    const kickPower = 0.8 + Math.random() * 0.7;
-                    ballPhysics.velocity.x = bot.direction.x * kickPower;
-                    ballPhysics.velocity.z = bot.direction.z * kickPower;
-                    ballPhysics.velocity.y = 0.3 + Math.random() * 0.4;
-                    ballPhysics.onGround = false;
-                    ballPhysics.owner = null;
-                    bot.hasBall = false;
-                }
-            } else {
-                // Đuổi theo bóng hoặc vị trí chiến thuật
-                const chaseTarget = ballPhysics.owner ? ballPhysics.owner.mesh.position : target;
-                bot.direction.subVectors(chaseTarget, bot.mesh.position).normalize();
-                
-                // Thêm yếu tố ngẫu nhiên
-                bot.direction.x += (Math.random() - 0.5) * 0.3;
-                bot.direction.z += (Math.random() - 0.5) * 0.3;
-                bot.direction.normalize();
-            }
-            
-            // Di chuyển bot
-            bot.mesh.position.x += bot.direction.x * bot.speed;
-            bot.mesh.position.z += bot.direction.z * bot.speed;
-            
-            // Giới hạn trong sân
-            bot.mesh.position.x = Math.max(-fieldLength/2 + 5, Math.min(fieldLength/2 - 5, bot.mesh.position.x));
-            bot.mesh.position.z = Math.max(-fieldWidth/2 + 5, Math.min(fieldWidth/2 - 5, bot.mesh.position.z));
-            
-            // Xoay bot theo hướng di chuyển
-            if (bot.direction.x !== 0 || bot.direction.z !== 0) {
-                bot.mesh.rotation.y = Math.atan2(bot.direction.x, bot.direction.z);
-            }
-            
-            // Animation chân
-            if (bot.isBot) {
-                bot.legs.forEach((leg, i) => {
-                    leg.rotation.x = Math.sin(Date.now() * 0.01 + i * Math.PI) * 0.5;
+        const track = generateTrack();
+        const enemies = [{ x: 150, y: 250, angle: 0, speed: 2 }];
+        let score = 0;
+
+        // Generate a winding procedural track
+        function generateTrack() {
+            const track = [];
+            for (let i = 0; i < 1000; i++) {
+                track.push({
+                    x: Math.sin(i * 0.1) * 200 + canvas.width / 2,
+                    y: i * 10
                 });
             }
-            
-            // Kiểm tra va chạm với bóng
-            if (!ballPhysics.owner && checkCollision(bot.mesh, ball, 2)) {
-                // Nhận bóng
-                ballPhysics.owner = bot;
-                bot.hasBall = true;
-                ballPhysics.velocity.set(0, 0, 0);
-                ballPhysics.onGround = true;
-            }
+            return track;
         }
-        
-        // Cập nhật người chơi
-        function updatePlayer() {
-            player.direction.set(0, 0, 0);
-            
-            if (keys.w) player.direction.z -= 1;
-            if (keys.s) player.direction.z += 1;
-            if (keys.a) player.direction.x -= 1;
-            if (keys.d) player.direction.x += 1;
-            
-            if (player.direction.x !== 0 || player.direction.z !== 0) {
-                player.direction.normalize();
-                player.mesh.position.x += player.direction.x * player.speed;
-                player.mesh.position.z += player.direction.z * player.speed;
-                
-                // Xoay người chơi
-                player.mesh.rotation.y = Math.atan2(player.direction.x, player.direction.z);
-                
-                // Animation chân
-                player.legs.forEach((leg, i) => {
-                    leg.rotation.x = Math.sin(Date.now() * 0.02 + i * Math.PI) * 0.5;
-                });
-            }
-            
-            // Giới hạn trong sân
-            player.mesh.position.x = Math.max(-fieldLength/2 + 5, Math.min(fieldLength/2 - 5, player.mesh.position.x));
-            player.mesh.position.z = Math.max(-fieldWidth/2 + 5, Math.min(fieldWidth/2 - 5, player.mesh.position.z));
-            
-            // Giữ bóng
-            if (player.hasBall) {
-                ball.position.copy(player.mesh.position);
-                ball.position.x += player.direction.x * 2;
-                ball.position.z += player.direction.z * 2;
-                ball.position.y = 1.5;
-            }
-        }
-        
-        // Cập nhật bóng
-        function updateBall() {
-            if (ballPhysics.owner) {
-                // Bóng theo chủ sở hữu
-                const owner = ballPhysics.owner;
-                ball.position.copy(owner.mesh.position);
-                ball.position.x += owner.direction.x * 2;
-                ball.position.z += owner.direction.z * 2;
-                ball.position.y = 1.5;
-            } else {
-                // Vật lý bóng
-                if (!ballPhysics.onGround) {
-                    ballPhysics.velocity.y -= ballPhysics.gravity * 0.016;
-                    ball.position.y += ballPhysics.velocity.y;
-                    
-                    if (ball.position.y <= 1) {
-                        ball.position.y = 1;
-                        ballPhysics.onGround = true;
-                        ballPhysics.velocity.y = 0;
-                        ballPhysics.velocity.multiplyScalar(ballPhysics.friction);
-                    }
-                }
-                
-                ball.position.x += ballPhysics.velocity.x;
-                ball.position.z += ballPhysics.velocity.z;
-                
-                // Kiểm tra va chạm với biên
-                if (Math.abs(ball.position.x) > fieldLength/2 - 1) {
-                    ball.position.x = Math.sign(ball.position.x) * (fieldLength/2 - 1);
-                    ballPhysics.velocity.x *= -0.7;
-                }
-                
-                if (Math.abs(ball.position.z) > fieldWidth/2 - 1) {
-                    ball.position.z = Math.sign(ball.position.z) * (fieldWidth/2 - 1);
-                    ballPhysics.velocity.z *= -0.7;
-                }
-                
-                // Kiểm tra va chạm với người chơi
-                if (!player.hasBall && checkCollision(player.mesh, ball, 2)) {
-                    if (keys.space) {
-                        // Giữ bóng
-                        ballPhysics.owner = player;
-                        player.hasBall = true;
-                        ballPhysics.velocity.set(0, 0, 0);
-                        ballPhysics.onGround = true;
-                    } else {
-                        // Bật bóng
-                        ballPhysics.velocity.x = (ball.position.x - player.mesh.position.x) * 0.5;
-                        ballPhysics.velocity.z = (ball.position.z - player.mesh.position.z) * 0.5;
-                        ballPhysics.velocity.y = 0.3;
-                        ballPhysics.onGround = false;
+
+        // ====== 3D RENDERING (RAYCASTING) ======
+        function render3D() {
+            // Sky
+            ctx.fillStyle = "#87CEEB";
+            ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
+
+            // Ground
+            ctx.fillStyle = "#2E8B57";
+            ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
+
+            // Walls (raycasting)
+            for (let x = 0; x < canvas.width; x++) {
+                const rayAngle = player.angle - 0.5 + x / canvas.width;
+                let distance = 0;
+                let hitWall = false;
+
+                while (!hitWall && distance < 1000) {
+                    distance += 2;
+                    const rayX = player.x + Math.cos(rayAngle) * distance;
+                    const rayY = player.y + Math.sin(rayAngle) * distance;
+
+                    // Track collision check
+                    const trackSegment = track[Math.floor(rayY / 10) % track.length];
+                    if (Math.abs(rayX - trackSegment.x) < 30) {
+                        hitWall = true;
+                        const wallHeight = (canvas.height * 50) / distance;
+                        ctx.fillStyle = `hsl(${200 - distance / 2}, 100%, 50%)`;
+                        ctx.fillRect(
+                            x,
+                            canvas.height / 2 - wallHeight / 2,
+                            2,
+                            wallHeight
+                        );
                     }
                 }
             }
-            
-            // Kiểm tra ghi bàn
-            function checkGoal(ballPos, goal) {
-                const goalDir = new THREE.Vector3(
-                    Math.sin(goal.rotation),
-                    0,
-                    Math.cos(goal.rotation)
-                );
-                
-                const toBall = new THREE.Vector3().subVectors(ballPos, goal.position);
-                const distToGoalLine = toBall.dot(goalDir);
-                
-                return distToGoalLine < goal.width/2 && 
-                       distToGoalLine > -1 && 
-                       Math.abs(toBall.dot(new THREE.Vector3(goalDir.z, 0, -goalDir.x))) < goal.width/2;
-            }
-            
-            if (checkGoal(ball.position, homeGoal) && !ballPhysics.owner) {
-                // Đội khách ghi bàn
-                awayScore++;
-                infoElement.textContent = `Đội bạn: ${homeScore} - ${awayScore} : Đối phương`;
-                resetAfterGoal();
-            } else if (checkGoal(ball.position, awayGoal) && !ballPhysics.owner) {
-                // Đội nhà ghi bàn
-                homeScore++;
-                infoElement.textContent = `Đội bạn: ${homeScore} - ${awayScore} : Đối phương`;
-                resetAfterGoal();
-            }
         }
-        
-        // Reset sau khi ghi bàn
-        function resetAfterGoal() {
-            // Reset bóng
-            ball.position.set(0, 1, 0);
-            ballPhysics.velocity.set(0, 0, 0);
-            ballPhysics.onGround = true;
-            ballPhysics.owner = null;
-            
-            // Reset người chơi
-            player.mesh.position.set(-10, 0, 0);
-            player.hasBall = false;
-            
-            // Reset đồng đội
-            teammates.forEach(bot => {
-                bot.mesh.position.set(
-                    -20 + Math.random() * 20,
-                    0,
-                    -20 + Math.random() * 40
-                );
-                bot.hasBall = false;
+
+        // ====== 2D MINIMAP (DEBUG) ======
+        function renderMinimap() {
+            const scale = 0.2;
+            ctx.save();
+            ctx.translate(20, canvas.height - 150);
+            ctx.scale(scale, scale);
+
+            // Draw track
+            ctx.strokeStyle = "white";
+            ctx.beginPath();
+            track.forEach((segment, i) => {
+                if (i === 0) ctx.moveTo(segment.x, segment.y);
+                else ctx.lineTo(segment.x, segment.y);
             });
-            
-            // Reset đối thủ
-            opponents.forEach(bot => {
-                bot.mesh.position.set(
-                    10 + Math.random() * 20,
-                    0,
-                    -20 + Math.random() * 40
-                );
-                bot.hasBall = false;
+            ctx.stroke();
+
+            // Draw player
+            ctx.fillStyle = "red";
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw enemies
+            ctx.fillStyle = "blue";
+            enemies.forEach(enemy => {
+                ctx.beginPath();
+                ctx.arc(enemy.x, enemy.y, 5, 0, Math.PI * 2);
+                ctx.fill();
             });
+
+            ctx.restore();
         }
-        
-        // Vòng lặp game
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            updatePlayer();
-            
-            // Cập nhật đồng đội
-            teammates.forEach(bot => {
-                updateBotAI(bot, ball, awayGoal);
+
+        // ====== PHYSICS & UPDATES ======
+        function update() {
+            // Player controls
+            if (keys.ArrowUp) player.speed = Math.min(player.speed + 0.05, player.maxSpeed);
+            if (keys.ArrowDown) player.speed = Math.max(player.speed - 0.05, -player.maxSpeed / 2);
+            if (keys.ArrowLeft) player.angle -= player.turnSpeed * player.speed;
+            if (keys.ArrowRight) player.angle += player.turnSpeed * player.speed;
+
+            // Friction
+            player.speed *= 0.95;
+            if (Math.abs(player.speed) < 0.01) player.speed = 0;
+
+            // Move player
+            player.x += Math.cos(player.angle) * player.speed;
+            player.y += Math.sin(player.angle) * player.speed;
+
+            // AI opponents
+            enemies.forEach(enemy => {
+                const targetSegment = track[Math.floor(enemy.y / 10) % track.length];
+                enemy.angle = Math.atan2(targetSegment.x - enemy.x, targetSegment.y - enemy.y);
+                enemy.x += Math.cos(enemy.angle) * enemy.speed;
+                enemy.y += Math.sin(enemy.angle) * enemy.speed;
             });
-            
-            // Cập nhật đối thủ
-            opponents.forEach(bot => {
-                updateBotAI(bot, ball, homeGoal);
-            });
-            
-            updateBall();
-            
-            controls.update();
-            renderer.render(scene, camera);
+
+            // Score (distance traveled)
+            score = Math.floor(player.y / 10);
         }
-        
-        // Xử lý resize
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-        
-        // Bắt đầu game
-        animate();
+
+        // ====== INPUT HANDLING ======
+        const keys = {};
+        window.addEventListener("keydown", e => keys[e.code] = true);
+        window.addEventListener("keyup", e => keys[e.code] = false);
+
+        // ====== GAME LOOP ======
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            render3D();
+            renderMinimap();
+            update();
+
+            // Display score
+            ctx.fillStyle = "white";
+            ctx.font = "20px Arial";
+            ctx.fillText(`Score: ${score}`, 20, 40);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
     </script>
 </body>
 </html>
