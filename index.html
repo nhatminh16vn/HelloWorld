@@ -242,7 +242,7 @@
         
         <div class="score-container">
             <div>Score: <span id="score">0</span></div>
-            <div>Question: <span id="question-count">1</span>/<span id="total-questions">10</span></div>
+            <div>Question: <span id="question-count">1</span>/<span id="total-questions">0</span></div>
         </div>
         
         <div class="statement-container">
@@ -301,7 +301,8 @@
             currentIndex: 0,
             score: 0,
             gameActive: false,
-            selectedCategory: 'all'
+            selectedCategory: 'all',
+            answered: false
         };
 
         // DOM elements
@@ -339,6 +340,7 @@
             state.currentIndex = 0;
             state.score = 0;
             state.gameActive = true;
+            state.answered = false;
             
             // Load questions
             loadQuestions();
@@ -355,6 +357,8 @@
             elements.fictionBtn.disabled = false;
             elements.nextBtn.style.display = 'none';
             elements.restartBtn.style.display = 'none';
+            elements.factBtn.style.display = 'block';
+            elements.fictionBtn.style.display = 'block';
             
             // Show first question
             showQuestion();
@@ -404,12 +408,14 @@
             elements.nextBtn.style.display = 'none';
             elements.factBtn.disabled = false;
             elements.fictionBtn.disabled = false;
+            state.answered = false;
         }
 
         // Check if answer is correct
         function checkAnswer(guess) {
-            if (!state.gameActive) return;
+            if (!state.gameActive || state.answered) return;
             
+            state.answered = true;
             const question = state.questions[state.currentIndex];
             const isCorrect = guess === question.answer;
             
@@ -421,7 +427,7 @@
                 elements.feedback.className = 'feedback correct';
                 createConfetti();
             } else {
-                elements.feedback.textContent = 'Incorrect! 😞';
+                elements.feedback.textContent = `Incorrect! It's ${question.answer === 'fact' ? 'a FACT' : 'FICTION'}.`;
                 elements.feedback.className = 'feedback incorrect';
             }
             
