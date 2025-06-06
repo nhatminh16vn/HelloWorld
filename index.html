@@ -3,270 +3,236 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flawless Fact or Fiction Game</title>
+    <title>Fact or Fiction Challenge</title>
     <style>
         :root {
-            --primary: #6e8efb;
-            --secondary: #a777e3;
-            --correct: #4CAF50;
-            --incorrect: #F44336;
-            --next-btn: #FFC107;
-            --text-light: #ffffff;
-            --text-dark: #333333;
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --correct: #4cc9f0;
+            --incorrect: #f72585;
+            --next-btn: #f8961e;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --bg-dark: #1a1a2e;
         }
         
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            font-family: 'Poppins', sans-serif;
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: var(--text-light);
-            text-align: center;
-            margin: 0;
-            padding: 20px;
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            line-height: 1.6;
+            align-items: center;
+            padding: 20px;
         }
         
-        .container {
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 15px;
-            padding: 30px;
+        .game-container {
+            background: rgba(26, 26, 46, 0.9);
+            border-radius: 16px;
+            padding: 2rem;
+            width: 100%;
             max-width: 600px;
-            width: 95%;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            position: relative;
-            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 1.5rem;
         }
         
         h1 {
-            margin: 0 0 20px;
-            font-size: clamp(1.8rem, 4vw, 2.5rem);
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-            background: linear-gradient(to right, #ff8a00, #e52e71);
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #f72585, #4cc9f0);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+        }
+        
+        .category-selector {
+            margin-bottom: 1.5rem;
+        }
+        
+        select {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            font-size: 1rem;
+            cursor: pointer;
         }
         
         .progress-container {
             width: 100%;
             height: 8px;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 4px;
-            margin-bottom: 20px;
+            margin-bottom: 1.5rem;
             overflow: hidden;
         }
         
         .progress-bar {
             height: 100%;
-            background: linear-gradient(to right, #ff8a00, #e52e71);
+            background: linear-gradient(to right, #f72585, #4cc9f0);
             width: 0%;
-            transition: width 0.3s ease;
-        }
-        
-        .fact-display {
-            font-size: clamp(1.2rem, 3vw, 1.5rem);
-            margin: 20px 0;
-            min-height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 5px solid var(--primary);
-        }
-        
-        .buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin: 15px 0;
-        }
-        
-        button {
-            padding: 12px 25px;
-            font-size: 1.1em;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: bold;
-            min-width: 120px;
-            outline: none;
-            user-select: none;
-        }
-        
-        #fact-btn {
-            background: var(--correct);
-            color: white;
-        }
-        
-        #fiction-btn {
-            background: var(--incorrect);
-            color: white;
-        }
-        
-        button:hover:not(:disabled) {
-            transform: scale(1.05);
-            filter: brightness(1.1);
-        }
-        
-        button:active:not(:disabled) {
-            transform: scale(0.98);
-        }
-        
-        button:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none !important;
+            transition: width 0.4s ease;
         }
         
         .score-container {
             display: flex;
             justify-content: space-between;
-            width: 100%;
-            margin-top: 20px;
-            font-size: 1.2em;
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
         }
         
-        .feedback {
-            font-size: clamp(1.1rem, 3vw, 1.3rem);
-            font-weight: bold;
-            margin: 15px 0;
-            min-height: 24px;
-            transition: all 0.3s;
+        .statement-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            min-height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 4px solid var(--primary);
         }
         
-        .correct {
-            color: var(--correct);
-            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        .statement {
+            font-size: 1.3rem;
+            line-height: 1.5;
+            text-align: center;
         }
         
-        .incorrect {
-            color: var(--incorrect);
-            text-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        button {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        #fact-btn {
+            background: var(--correct);
+            color: var(--text-dark);
+        }
+        
+        #fiction-btn {
+            background: var(--incorrect);
+            color: var(--text-light);
         }
         
         #next-btn {
             background: var(--next-btn);
             color: var(--text-dark);
+            width: 100%;
             display: none;
-            margin: 20px auto 0;
+        }
+        
+        #restart-btn {
+            background: var(--primary);
+            color: var(--text-light);
+            width: 100%;
+            display: none;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        .feedback {
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            min-height: 2rem;
+        }
+        
+        .correct {
+            color: var(--correct);
+        }
+        
+        .incorrect {
+            color: var(--incorrect);
         }
         
         .explanation {
-            font-size: clamp(0.9rem, 2.5vw, 1rem);
-            margin-top: 10px;
-            font-style: italic;
-            opacity: 0.9;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.5s ease, margin 0.3s ease;
-            text-align: left;
             background: rgba(0, 0, 0, 0.3);
-            padding: 0 15px;
             border-radius: 8px;
-        }
-        
-        .show-explanation {
-            max-height: 300px;
-            margin-top: 15px;
-            padding: 15px;
-        }
-        
-        .category-selector {
-            margin-bottom: 20px;
-            width: 100%;
-        }
-        
-        select {
-            padding: 8px 15px;
-            border-radius: 20px;
-            border: none;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            font-weight: bold;
-            width: 100%;
-            max-width: 300px;
-            cursor: pointer;
-            outline: none;
-        }
-        
-        select option {
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-        }
-        
-        .confetti {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background-color: #f00;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 100;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: none;
         }
         
         .game-over {
-            font-size: 1.5em;
-            margin: 20px 0;
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
         }
         
-        .restart-btn {
-            background: var(--primary);
-            color: white;
-            margin-top: 20px;
+        .final-score {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: var(--correct);
         }
         
-        .error-message {
-            color: #ff4444;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-        
-        @media (max-width: 500px) {
-            .container {
-                padding: 20px;
-            }
-            
+        @media (max-width: 600px) {
             .buttons {
                 flex-direction: column;
-                gap: 10px;
             }
             
-            button {
-                width: 100%;
+            .statement {
+                font-size: 1.1rem;
             }
             
-            .fact-display {
-                padding: 15px;
-                min-height: 100px;
+            .game-container {
+                padding: 1.5rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>✨ Fact or Fiction? ✨</h1>
+    <div class="game-container">
+        <div class="header">
+            <h1>Fact or Fiction?</h1>
+            <p>Test your knowledge with these surprising statements</p>
+        </div>
         
         <div class="category-selector">
             <select id="category-select">
                 <option value="all">All Categories</option>
-                <option value="general">General Knowledge</option>
                 <option value="science">Science</option>
                 <option value="history">History</option>
-                <option value="animals">Animals</option>
-                <option value="geography">Geography</option>
+                <option value="nature">Nature</option>
+                <option value="tech">Technology</option>
             </select>
         </div>
         
@@ -276,13 +242,15 @@
         
         <div class="score-container">
             <div>Score: <span id="score">0</span></div>
-            <div>Question: <span id="question-count">1</span>/<span id="total-questions">0</span></div>
+            <div>Question: <span id="question-count">1</span>/<span id="total-questions">10</span></div>
         </div>
         
-        <div class="fact-display" id="fact-display">Loading game...</div>
+        <div class="statement-container">
+            <p class="statement" id="statement">Loading game...</p>
+        </div>
         
         <div class="feedback" id="feedback"></div>
-        <div class="error-message" id="error-message"></div>
+        
         <div class="explanation" id="explanation"></div>
         
         <div class="buttons">
@@ -291,352 +259,264 @@
         </div>
         
         <button id="next-btn">Next Question ➡</button>
-        <button id="restart-btn" class="restart-btn" style="display: none;">Play Again 🔄</button>
+        <button id="restart-btn">Play Again 🔄</button>
     </div>
 
     <script>
-        // Enhanced game data with categories and explanations
+        // Game data with categories
         const gameData = {
-            general: [
-              { statement: "The dot over the letter 'i' is called a tittle.", answer: "fact", explanation: "The small dot is indeed called a tittle, which comes from the Latin word 'titulus' meaning 'inscription' or 'heading'." },
-{ statement: "The inventor of the telephone, Alexander Graham Bell, never called his mother or wife because they were both deaf.", answer: "fiction", explanation: "While Bell's mother and wife were indeed deaf, this didn't prevent him from communicating with them - he developed many devices to help the deaf communicate." },
-{ statement: "The shortest war in history lasted only 38 minutes.", answer: "fact", explanation: "The Anglo-Zanzibar War of 1896 lasted between 38 and 45 minutes, making it the shortest recorded war in history." },
-{ statement: "The Great Pyramid of Giza was originally white.", answer: "fact", explanation: "It was covered in highly polished white limestone that reflected the sun's light, making it shine brightly." },
-{ statement: "The first product to have a barcode was Wrigley's gum.", answer: "fact", explanation: "In 1974, a pack of Wrigley's Juicy Fruit gum was the first item scanned at a supermarket checkout." },
-{ statement: "The average person spends 6 months of their lifetime waiting for red lights to turn green.", answer: "fact", explanation: "Studies on time usage have confirmed this surprising statistic about traffic light waiting times." },
-{ statement: "The 'D' in D-Day stands for 'Doom'.", answer: "fiction", explanation: "The 'D' simply stands for 'Day' - it was a standard military designation meaning the day an operation begins." },
-{ statement: "The national animal of Scotland is the unicorn.", answer: "fact", explanation: "The unicorn has been Scotland's national animal since the 12th century, symbolizing purity and power." },
-{ statement: "The longest English word is 'pneumonoultramicroscopicsilicovolcanoconiosis'.", answer: "fiction", explanation: "While this 45-letter word refers to a lung disease, it was deliberately coined to be the longest word and isn't recognized by most dictionaries as a legitimate medical term." },
-{ statement: "The first oranges weren't orange.", answer: "fact", explanation: "Original oranges from Southeast Asia were green, and the orange color we know was developed through cultivation." },
-
             science: [
-{ statement: "A day on Venus is longer than a year on Venus.", answer: "fact", explanation: "Venus takes 243 Earth days to rotate once but only 225 Earth days to orbit the Sun." },
-{ statement: "Humans only use 10% of their brains.", answer: "fiction", explanation: "This is a myth - brain scans show activity throughout the entire brain, even during sleep." },
-{ statement: "Octopuses have three hearts.", answer: "fact", explanation: "Two pump blood to the gills, while the third pumps it to the rest of the body. They all stop when the octopus swims." },
-{ statement: "Lightning never strikes the same place twice.", answer: "fiction", explanation: "Lightning often strikes the same place repeatedly, especially tall, pointy, isolated objects." },
-{ statement: "The smell of rain is called petrichor.", answer: "fact", explanation: "This term describes the earthy scent produced when rain falls on dry soil, caused by bacteria and plant oils." },
-{ statement: "Goldfish have a three-second memory.", answer: "fiction", explanation: "Studies show goldfish can remember things for months and can be trained to perform tricks." },
-{ statement: "A teaspoon of neutron star material would weigh about 10 million tons.", answer: "fact", explanation: "Neutron stars are so dense that their material packs the mass of a mountain into a tiny space." },
-{ statement: "Chameleons change color to blend into their environment.", answer: "fiction", explanation: "They primarily change color due to temperature, mood, and communication, not camouflage." },
-{ statement: "There are more atoms in a glass of water than glasses of water in all the oceans.", answer: "fact", explanation: "A glass contains about 10^24 atoms, while Earth's oceans contain about 10^21 glasses worth of water." },
-{ statement: "The human nose can detect over one trillion different scents.", answer: "fact", explanation: "Recent research suggests our olfactory system is far more sensitive than previously believed." },
+                { statement: "A human could swim through the blood vessels of a blue whale.", answer: "fact", explanation: "A blue whale's aorta is so large that a small human could theoretically swim through it." },
+                { statement: "The smell of rain is called petrichor.", answer: "fact", explanation: "Petrichor is the earthy scent produced when rain falls on dry soil." },
+                { statement: "Humans only use 10% of their brains.", answer: "fiction", explanation: "This is a myth - brain scans show activity throughout the entire brain." },
+                { statement: "Lightning never strikes the same place twice.", answer: "fiction", explanation: "Lightning often strikes tall structures repeatedly." },
+                { statement: "Bananas are berries, but strawberries aren't.", answer: "fact", explanation: "Botanically, bananas qualify as berries while strawberries don't meet the criteria." }
+            ],
             history: [
-{ statement: "The Titanic was advertised as 'unsinkable' before its maiden voyage.", answer: "fiction", explanation: "While considered very safe, the White Star Line never actually claimed it was unsinkable in official materials." },
-{ statement: "Napoleon Bonaparte was actually average height for his time.", answer: "fact", explanation: "At 5'7\", he was slightly taller than the average Frenchman, but British propaganda exaggerated his shortness." },
-{ statement: "The Great Fire of London in 1666 killed more people than any other fire in British history.", answer: "fiction", explanation: "Remarkably, only 6 verified deaths occurred, though it destroyed 13,000+ houses." },
-{ statement: "The ancient Romans used urine as mouthwash.", answer: "fact", explanation: "Ammonia in urine acted as a cleaning agent, though this practice was eventually abandoned." },
-{ statement: "The Hundred Years' War actually lasted 116 years.", answer: "fact", explanation: "The series of conflicts between England and France ran from 1337 to 1453." },
-{ statement: "Abraham Lincoln wrote the Gettysburg Address on the back of an envelope.", answer: "fiction", explanation: "He carefully prepared it in advance, though the myth persists from eyewitness accounts." },
-{ statement: "The Library of Alexandria was destroyed in a single catastrophic fire.", answer: "fiction", explanation: "It declined gradually over centuries due to multiple events, not one sudden destruction." },
-{ statement: "The first computer programmer was a woman, Ada Lovelace.", answer: "fact", explanation: "She wrote algorithms for Charles Babbage's proposed Analytical Engine in the 1840s." },
-{ statement: "The Wright brothers flew the first airplane in 1901.", answer: "fiction", explanation: "Their famous first flight was December 17, 1903 at Kitty Hawk, North Carolina." },
-            animals: [
-{ statement: "A shrimp's heart is in its head.", answer: "fact", explanation: "Like all arthropods, shrimp have their main organs in their cephalothorax (head area)." },
-{ statement: "Bulls are enraged by the color red.", answer: "fiction", explanation: "Bulls are colorblind to red - they react to the movement of the cape, not its color." },
-{ statement: "Koalas have fingerprints almost identical to humans.", answer: "fact", explanation: "Under a microscope, koala prints are virtually indistinguishable from human ones." },
-{ statement: "Camels store water in their humps.", answer: "fiction", explanation: "Humps store fat for energy; their water is stored throughout their body tissues." },
-{ statement: "A group of crows is called a murder.", answer: "fact", explanation: "This poetic term dates back to 15th century English folklore about crow behavior." },
-{ statement: "Touching a baby bird will make its mother reject it.", answer: "fiction", explanation: "Most birds have a poor sense of smell and won't abandon babies touched by humans." },
-{ statement: "Polar bears have black skin under their white fur.", answer: "fact", explanation: "The black skin helps absorb heat, while the translucent fur reflects visible light." },
-{ statement: "Bats are blind.", answer: "fiction", explanation: "All bat species can see, and many use vision along with echolocation." },
-{ statement: "The blue whale's heart is the size of a small car.", answer: "fact", explanation: "Their hearts weigh about 400 pounds and can be 5 feet long by 4 feet wide." },
-{ statement: "Elephants are the only animals that can't jump.", answer: "fiction", explanation: "While adult elephants can't jump, several other large mammals also can't jump." },
-            geography: [
-{ statement: "Canada has more lakes than the rest of the world's lakes combined.", answer: "fact", explanation: "Canada contains about 60% of the world's lakes, with over 2 million lakes within its borders." },
-{ statement: "The Sahara is the world's largest desert.", answer: "fact", explanation: "At 3.6 million square miles, it's larger than Antarctica's polar desert by about 0.4 million square miles." },
-{ statement: "The Dead Sea is the lowest point on Earth.", answer: "fiction", explanation: "While very low at -1,412 ft, Antarctica's Denman Glacier reaches -3,500 ft below sea level." },
-{ statement: "Istanbul is the only city spanning two continents.", answer: "fiction", explanation: "Several cities span Europe and Asia, including Atyrau (Kazakhstan) and Magnitogorsk (Russia)." },
-{ statement: "Alaska is the westernmost, easternmost, and northernmost U.S. state.", answer: "fact", explanation: "Due to the Aleutian Islands crossing the 180th meridian, Alaska reaches into the Eastern Hemisphere." },
-{ statement: "The Amazon River is the longest river in the world.", answer: "fiction", explanation: "The Nile is about 4,132 miles long, while the Amazon is about 3,977 miles (measurements vary by source)." },
-{ statement: "France has the most time zones of any country.", answer: "fact", explanation: "Due to overseas territories, France has 12 time zones, beating Russia's 11 and the U.S.'s 9." },
-{ statement: "Mount Everest is the tallest mountain from base to summit.", answer: "fiction", explanation: "Hawaii's Mauna Kea is taller when measured from its underwater base (33,500 ft vs Everest's 29,032 ft)." },
-{ statement: "There are no rivers in Saudi Arabia.", answer: "fiction", explanation: "While it has no permanent rivers, it has hundreds of wadis - riverbeds that fill during rains." },
-{ statement: "The Pacific Ocean is shrinking while the Atlantic is expanding.", answer: "fact", explanation: "Plate tectonics cause the Pacific to shrink about 1 inch per year while the Atlantic widens." },
-        // Game state management
-        const gameState = {
-            currentQuestions: [],
+                { statement: "The Great Wall of China is visible from space.", answer: "fiction", explanation: "It's not visible to the naked eye from space despite the common myth." },
+                { statement: "Napoleon Bonaparte was unusually short.", answer: "fiction", explanation: "At 5'7\", he was actually average height for his time." },
+                { statement: "The Titanic was advertised as 'unsinkable'.", answer: "fiction", explanation: "While considered very safe, it was never officially called unsinkable." },
+                { statement: "Ancient Romans used urine as mouthwash.", answer: "fact", explanation: "The ammonia in urine acted as a cleaning agent." },
+                { statement: "The Hundred Years' War lasted exactly 100 years.", answer: "fiction", explanation: "It actually lasted 116 years (1337-1453)." }
+            ],
+            nature: [
+                { statement: "A group of crows is called a murder.", answer: "fact", explanation: "This poetic term dates back to 15th century English folklore." },
+                { statement: "Bulls are angered by the color red.", answer: "fiction", explanation: "Bulls are colorblind to red - they react to movement." },
+                { statement: "Polar bears have black skin under their fur.", answer: "fact", explanation: "The black skin helps absorb heat from sunlight." },
+                { statement: "Camels store water in their humps.", answer: "fiction", explanation: "They store fat in humps; water is stored throughout their bodies." },
+                { statement: "Octopuses have three hearts.", answer: "fact", explanation: "Two pump blood to the gills, one to the rest of the body." }
+            ],
+            tech: [
+                { statement: "The first computer programmer was a woman.", answer: "fact", explanation: "Ada Lovelace wrote algorithms for Charles Babbage's Analytical Engine." },
+                { statement: "The 'Q' in QWERTY stands for 'Quick'.", answer: "fiction", explanation: "It's just the name of the keyboard layout's first letters." },
+                { statement: "The first website is still online.", answer: "fact", explanation: "Tim Berners-Lee's 1991 website at info.cern.ch is still accessible." },
+                { statement: "Smartphones have more computing power than NASA had for the moon landing.", answer: "fact", explanation: "Modern phones are millions of times more powerful." },
+                { statement: "The inventor of WiFi was inspired by chocolate.", answer: "fact", explanation: "The idea for frequency hopping came from chocolate melting issues." }
+            ]
+        };
+
+        // Game state
+        const state = {
+            questions: [],
             currentIndex: 0,
             score: 0,
-            isActive: false,
-            selectedCategory: 'all',
-            answered: false
+            gameActive: false,
+            selectedCategory: 'all'
         };
 
         // DOM elements
         const elements = {
-            factDisplay: document.getElementById('fact-display'),
+            statement: document.getElementById('statement'),
             factBtn: document.getElementById('fact-btn'),
             fictionBtn: document.getElementById('fiction-btn'),
             nextBtn: document.getElementById('next-btn'),
             restartBtn: document.getElementById('restart-btn'),
-            scoreDisplay: document.getElementById('score'),
-            feedbackDisplay: document.getElementById('feedback'),
-            errorDisplay: document.getElementById('error-message'),
-            explanationDisplay: document.getElementById('explanation'),
-            questionCountDisplay: document.getElementById('question-count'),
-            totalQuestionsDisplay: document.getElementById('total-questions'),
+            score: document.getElementById('score'),
+            feedback: document.getElementById('feedback'),
+            explanation: document.getElementById('explanation'),
+            questionCount: document.getElementById('question-count'),
+            totalQuestions: document.getElementById('total-questions'),
             progressBar: document.getElementById('progress-bar'),
             categorySelect: document.getElementById('category-select')
         };
 
-        // Initialize the game
-        function initGame() {
-            try {
-                // Validate DOM elements
-                if (!validateElements()) {
-                    throw new Error('Critical DOM elements missing');
-                }
-
-                // Event listeners with error handling
-                safelyAddListener(elements.factBtn, 'click', () => handleAnswer('fact'));
-                safelyAddListener(elements.fictionBtn, 'click', () => handleAnswer('fiction'));
-                safelyAddListener(elements.nextBtn, 'click', nextQuestion);
-                safelyAddListener(elements.restartBtn, 'click', startGame);
-                safelyAddListener(elements.categorySelect, 'change', handleCategoryChange);
-                
-                // Initial game setup
-                startGame();
-            } catch (error) {
-                showError(`Initialization failed: ${error.message}`);
-            }
+        // Initialize game
+        function init() {
+            // Event listeners
+            elements.factBtn.addEventListener('click', () => checkAnswer('fact'));
+            elements.fictionBtn.addEventListener('click', () => checkAnswer('fiction'));
+            elements.nextBtn.addEventListener('click', nextQuestion);
+            elements.restartBtn.addEventListener('click', startGame);
+            elements.categorySelect.addEventListener('change', changeCategory);
+            
+            // Start the game
+            startGame();
         }
 
-        function validateElements() {
-            for (const [key, element] of Object.entries(elements)) {
-                if (!element) {
-                    console.error(`Missing element: ${key}`);
-                    return false;
-                }
-            }
-            return true;
+        // Start a new game
+        function startGame() {
+            // Reset state
+            state.currentIndex = 0;
+            state.score = 0;
+            state.gameActive = true;
+            
+            // Load questions
+            loadQuestions();
+            
+            // Update UI
+            updateScore();
+            elements.questionCount.textContent = 1;
+            elements.totalQuestions.textContent = state.questions.length;
+            elements.progressBar.style.width = '0%';
+            elements.feedback.textContent = '';
+            elements.explanation.textContent = '';
+            elements.explanation.style.display = 'none';
+            elements.factBtn.disabled = false;
+            elements.fictionBtn.disabled = false;
+            elements.nextBtn.style.display = 'none';
+            elements.restartBtn.style.display = 'none';
+            
+            // Show first question
+            showQuestion();
         }
 
-        function safelyAddListener(element, event, handler) {
-            if (!element) {
-                console.error(`Cannot add listener to missing element`);
+        // Load questions based on selected category
+        function loadQuestions() {
+            if (state.selectedCategory === 'all') {
+                // Combine all questions
+                state.questions = Object.values(gameData).flat();
+            } else {
+                // Get questions for selected category
+                state.questions = [...gameData[state.selectedCategory]];
+            }
+            
+            // Shuffle questions
+            shuffleArray(state.questions);
+        }
+
+        // Shuffle array using Fisher-Yates algorithm
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Show current question
+        function showQuestion() {
+            if (!state.gameActive || state.currentIndex >= state.questions.length) {
+                endGame();
                 return;
             }
-            element.addEventListener(event, handler);
+            
+            const question = state.questions[state.currentIndex];
+            elements.statement.textContent = question.statement;
+            
+            // Update progress
+            elements.questionCount.textContent = state.currentIndex + 1;
+            elements.progressBar.style.width = `${((state.currentIndex + 1) / state.questions.length) * 100}%`;
+            
+            // Reset UI for new question
+            elements.feedback.textContent = '';
+            elements.explanation.textContent = '';
+            elements.explanation.style.display = 'none';
+            elements.nextBtn.style.display = 'none';
+            elements.factBtn.disabled = false;
+            elements.fictionBtn.disabled = false;
         }
 
-        function handleCategoryChange(e) {
-            try {
-                gameState.selectedCategory = e.target.value;
-                startGame();
-            } catch (error) {
-                showError(`Category change failed: ${error.message}`);
+        // Check if answer is correct
+        function checkAnswer(guess) {
+            if (!state.gameActive) return;
+            
+            const question = state.questions[state.currentIndex];
+            const isCorrect = guess === question.answer;
+            
+            // Update score
+            if (isCorrect) {
+                state.score++;
+                updateScore();
+                elements.feedback.textContent = 'Correct! 🎉';
+                elements.feedback.className = 'feedback correct';
+                createConfetti();
+            } else {
+                elements.feedback.textContent = 'Incorrect! 😞';
+                elements.feedback.className = 'feedback incorrect';
             }
+            
+            // Show explanation
+            elements.explanation.textContent = question.explanation;
+            elements.explanation.style.display = 'block';
+            
+            // Disable answer buttons
+            elements.factBtn.disabled = true;
+            elements.fictionBtn.disabled = true;
+            
+            // Show next button
+            elements.nextBtn.style.display = 'block';
         }
 
-        function startGame() {
-            try {
-                // Reset game state
-                gameState.currentIndex = 0;
-                gameState.score = 0;
-                gameState.isActive = true;
-                gameState.answered = false;
-                
-                // Reset UI
-                elements.scoreDisplay.textContent = gameState.score;
-                elements.factBtn.style.display = 'block';
-                elements.fictionBtn.style.display = 'block';
-                elements.nextBtn.style.display = 'none';
-                elements.restartBtn.style.display = 'none';
-                elements.errorDisplay.textContent = '';
-                elements.factBtn.disabled = false;
-                elements.fictionBtn.disabled = false;
-                
-                // Load questions
-                loadQuestions();
-                
-                // Load first question
-                if (gameState.currentQuestions.length > 0) {
-                    loadQuestion();
-                } else {
-                    showError("No questions available for this category.");
-                    gameState.isActive = false;
-                    elements.factBtn.style.display = 'none';
-                    elements.fictionBtn.style.display = 'none';
-                }
-            } catch (error) {
-                showError(`Game start failed: ${error.message}`);
-            }
-        }
-
-        function loadQuestions() {
-            try {
-                if (gameState.selectedCategory === 'all') {
-                    gameState.currentQuestions = Object.values(gameData).flat();
-                } else if (gameData[gameState.selectedCategory]) {
-                    gameState.currentQuestions = [...gameData[gameState.selectedCategory]];
-                } else {
-                    gameState.currentQuestions = [];
-                }
-                
-                // Shuffle questions
-                gameState.currentQuestions = shuffleArray(gameState.currentQuestions);
-                elements.totalQuestionsDisplay.textContent = gameState.currentQuestions.length;
-            } catch (error) {
-                showError(`Failed to load questions: ${error.message}`);
-                gameState.currentQuestions = [];
-            }
-        }
-
-        function shuffleArray(array) {
-            try {
-                const newArray = [...array];
-                for (let i = newArray.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-                }
-                return newArray;
-            } catch (error) {
-                showError(`Shuffle failed: ${error.message}`);
-                return array; // Return unshuffled as fallback
-            }
-        }
-
-        function loadQuestion() {
-            try {
-                if (!gameState.isActive || gameState.currentIndex >= gameState.currentQuestions.length) {
-                    endGame();
-                    return;
-                }
-                
-                // Update UI
-                elements.questionCountDisplay.textContent = gameState.currentIndex + 1;
-                elements.progressBar.style.width = `${((gameState.currentIndex + 1) / gameState.currentQuestions.length) * 100}%`;
-                
-                // Set question
-                elements.factDisplay.textContent = gameState.currentQuestions[gameState.currentIndex].statement;
-                elements.feedbackDisplay.textContent = '';
-                elements.feedbackDisplay.className = 'feedback';
-                elements.explanationDisplay.textContent = '';
-                elements.explanationDisplay.className = 'explanation';
-                elements.nextBtn.style.display = 'none';
-                elements.factBtn.disabled = false;
-                elements.fictionBtn.disabled = false;
-                gameState.answered = false;
-            } catch (error) {
-                showError(`Failed to load question: ${error.message}`);
-            }
-        }
-
-        function handleAnswer(guess) {
-            try {
-                if (!gameState.isActive || gameState.answered) return;
-                
-                gameState.answered = true;
-                const correctAnswer = gameState.currentQuestions[gameState.currentIndex].answer;
-                elements.factBtn.disabled = true;
-                elements.fictionBtn.disabled = true;
-                elements.nextBtn.style.display = 'block';
-                
-                // Show explanation
-                elements.explanationDisplay.textContent = 
-                    gameState.currentQuestions[gameState.currentIndex].explanation || "No explanation available.";
-                elements.explanationDisplay.classList.add('show-explanation');
-                
-                if (guess === correctAnswer) {
-                    gameState.score++;
-                    elements.scoreDisplay.textContent = gameState.score;
-                    elements.feedbackDisplay.textContent = "Correct! 🎉";
-                    elements.feedbackDisplay.className = 'feedback correct';
-                    createConfetti();
-                } else {
-                    elements.feedbackDisplay.textContent = `Wrong! It's ${correctAnswer === 'fact' ? 'a FACT' : 'FICTION'}.`;
-                    elements.feedbackDisplay.className = 'feedback incorrect';
-                }
-            } catch (error) {
-                showError(`Answer processing failed: ${error.message}`);
-            }
-        }
-
+        // Move to next question
         function nextQuestion() {
-            try {
-                gameState.currentIndex++;
-                if (gameState.currentIndex < gameState.currentQuestions.length) {
-                    loadQuestion();
-                } else {
-                    endGame();
-                }
-            } catch (error) {
-                showError(`Question transition failed: ${error.message}`);
+            state.currentIndex++;
+            if (state.currentIndex < state.questions.length) {
+                showQuestion();
+            } else {
+                endGame();
             }
         }
 
+        // End the game
         function endGame() {
-            try {
-                gameState.isActive = false;
-                elements.factDisplay.innerHTML = `<div class="game-over">Game Over!<br>Your final score: ${gameState.score}/${gameState.currentQuestions.length}</div>`;
-                elements.feedbackDisplay.textContent = '';
-                elements.explanationDisplay.textContent = '';
-                elements.explanationDisplay.className = 'explanation';
-                elements.nextBtn.style.display = 'none';
-                elements.factBtn.style.display = 'none';
-                elements.fictionBtn.style.display = 'none';
-                elements.restartBtn.style.display = 'block';
-                
-                if (gameState.score === gameState.currentQuestions.length) {
-                    createConfetti(true);
-                    elements.factDisplay.innerHTML += `<div style="margin-top: 10px;">Perfect score! 🏆</div>`;
-                }
-            } catch (error) {
-                showError(`Game end failed: ${error.message}`);
+            state.gameActive = false;
+            
+            // Show final score
+            elements.statement.innerHTML = `
+                <div class="game-over">Game Over!</div>
+                <div class="final-score">${state.score}/${state.questions.length}</div>
+            `;
+            
+            // Hide answer buttons
+            elements.factBtn.style.display = 'none';
+            elements.fictionBtn.style.display = 'none';
+            elements.nextBtn.style.display = 'none';
+            
+            // Show restart button
+            elements.restartBtn.style.display = 'block';
+            
+            // Special message for perfect score
+            if (state.score === state.questions.length) {
+                elements.statement.innerHTML += `<div style="margin-top: 1rem;">Perfect! You're a fact master! 🏆</div>`;
+                createConfetti(true);
             }
         }
 
+        // Update score display
+        function updateScore() {
+            elements.score.textContent = state.score;
+        }
+
+        // Change category
+        function changeCategory(e) {
+            state.selectedCategory = e.target.value;
+            startGame();
+        }
+
+        // Create confetti effect
         function createConfetti(intense = false) {
-            try {
-                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
-                const container = document.querySelector('.container');
+            const colors = ['#4cc9f0', '#f72585', '#b5179e', '#7209b7', '#560bad', '#480ca8'];
+            const container = document.querySelector('.game-container');
+            
+            const count = intense ? 100 : 30;
+            
+            for (let i = 0; i < count; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.position = 'absolute';
+                confetti.style.width = '10px';
+                confetti.style.height = '10px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.borderRadius = '50%';
+                confetti.style.left = `${Math.random() * 100}%`;
+                confetti.style.top = '-10px';
+                confetti.style.zIndex = '100';
+                confetti.style.pointerEvents = 'none';
+                container.appendChild(confetti);
                 
-                const confettiCount = intense ? 100 : 20;
+                const animation = confetti.animate([
+                    { transform: 'translate(0, 0) rotate(0deg)', opacity: 1 },
+                    { transform: `translate(${Math.random() * 200 - 100}px, ${window.innerHeight}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+                ], {
+                    duration: Math.random() * 3000 + 2000,
+                    easing: 'cubic-bezier(0.1, 0.8, 0.9, 1)'
+                });
                 
-                for (let i = 0; i < confettiCount; i++) {
-                    const confetti = document.createElement('div');
-                    confetti.className = 'confetti';
-                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                    confetti.style.left = `${Math.random() * 100}%`;
-                    confetti.style.top = '-10px';
-                    container.appendChild(confetti);
-                    
-                    const animationDuration = Math.random() * 3 + 2;
-                    
-                    const animation = confetti.animate([
-                        { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
-                        { transform: `translate(${Math.random() * 200 - 100}px, ${window.innerHeight}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
-                    ], {
-                        duration: animationDuration * 1000,
-                        easing: 'cubic-bezier(0.1, 0.8, 0.9, 1)'
-                    });
-                    
-                    animation.onfinish = () => {
-                        try {
-                            confetti.remove();
-                        } catch (e) {
-                            console.error('Confetti removal failed', e);
-                        }
-                    };
-                }
-            } catch (error) {
-                console.error('Confetti failed', error);
+                animation.onfinish = () => confetti.remove();
             }
         }
 
-        function showError(message) {
-            console.error(message);
-            if (elements.errorDisplay) {
-                elements.errorDisplay.textContent = message;
-            }
-        }
-
-        // Start the game when page is fully loaded
-        if (document.readyState === 'complete') {
-            initGame();
-        } else {
-            window.addEventListener('load', initGame);
-        }
+        // Start the game when page loads
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>
