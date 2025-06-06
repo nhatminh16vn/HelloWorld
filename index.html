@@ -298,67 +298,60 @@
         // Enhanced game data with categories and explanations
         const gameData = {
             general: [
-                { 
-                    statement: "Honey never spoils. Archaeologists have found edible honey in ancient Egyptian tombs.", 
-                    answer: "fact",
-                    explanation: "Honey's low moisture content and acidic pH make it inhospitable to bacteria. Archaeologists have indeed found 3,000-year-old honey that's still edible!"
-                },
-                { 
-                    statement: "The Great Wall of China is the only man-made structure visible from space.", 
-                    answer: "fiction",
-                    explanation: "This is a common myth. Many large human-made structures are visible from low Earth orbit, but the Great Wall isn't particularly visible to the naked eye."
-                }
-            ],
-            science: [
-                { 
-                    statement: "Bananas are berries, but strawberries aren't.", 
-                    answer: "fact",
-                    explanation: "Botanically, berries develop from a single ovary and typically contain multiple seeds. Bananas qualify, while strawberries develop from multiple ovaries."
-                },
-                { 
-                    statement: "The human body has five senses.", 
-                    answer: "fiction",
-                    explanation: "Humans have at least 9 senses, including balance (equilibrioception), temperature (thermoception), and pain (nociception)."
-                }
-            ],
-            history: [
-                { 
-                    statement: "Cleopatra lived closer to the invention of the iPhone than to the building of the pyramids.", 
-                    answer: "fact",
-                    explanation: "The pyramids were built around 2560 BCE, Cleopatra lived around 30 BCE (2,530 years later), and the iPhone debuted in 2007 (2,037 years after Cleopatra)."
-                },
-                { 
-                    statement: "The Titanic was the deadliest ship disaster in history.", 
-                    answer: "fiction",
-                    explanation: "While tragic (1,500+ deaths), the Wilhelm Gustloff sinking in 1945 killed about 9,400 people, making it the deadliest maritime disaster."
-                }
-            ],
-            animals: [
-                { 
-                    statement: "A group of flamingos is called a 'flamboyance'.", 
-                    answer: "fact",
-                    explanation: "This colorful term fits these vibrant birds perfectly! Other great animal group names include a 'murder' of crows and a 'parliament' of owls."
-                },
-                { 
-                    statement: "Bats are blind.", 
-                    answer: "fiction",
-                    explanation: "While bats use echolocation to navigate, they can see quite well. In fact, many species have excellent night vision."
-                }
-            ],
-            geography: [
-                { 
-                    statement: "The Eiffel Tower grows taller in the summer due to heat expansion.", 
-                    answer: "fact",
-                    explanation: "Iron expands when heated! The tower can grow up to 6 inches (15 cm) taller on hot days."
-                },
-                { 
-                    statement: "Canada is the largest country in the world by land area.", 
-                    answer: "fiction",
-                    explanation: "Russia is the largest (17.1 million km²), followed by Canada (9.98 million km²). Canada is larger than China and the US though!"
-                }
-            ]
-        };
+              { statement: "The dot over the letter 'i' is called a tittle.", answer: "fact", explanation: "The small dot is indeed called a tittle, which comes from the Latin word 'titulus' meaning 'inscription' or 'heading'." },
+{ statement: "The inventor of the telephone, Alexander Graham Bell, never called his mother or wife because they were both deaf.", answer: "fiction", explanation: "While Bell's mother and wife were indeed deaf, this didn't prevent him from communicating with them - he developed many devices to help the deaf communicate." },
+{ statement: "The shortest war in history lasted only 38 minutes.", answer: "fact", explanation: "The Anglo-Zanzibar War of 1896 lasted between 38 and 45 minutes, making it the shortest recorded war in history." },
+{ statement: "The Great Pyramid of Giza was originally white.", answer: "fact", explanation: "It was covered in highly polished white limestone that reflected the sun's light, making it shine brightly." },
+{ statement: "The first product to have a barcode was Wrigley's gum.", answer: "fact", explanation: "In 1974, a pack of Wrigley's Juicy Fruit gum was the first item scanned at a supermarket checkout." },
+{ statement: "The average person spends 6 months of their lifetime waiting for red lights to turn green.", answer: "fact", explanation: "Studies on time usage have confirmed this surprising statistic about traffic light waiting times." },
+{ statement: "The 'D' in D-Day stands for 'Doom'.", answer: "fiction", explanation: "The 'D' simply stands for 'Day' - it was a standard military designation meaning the day an operation begins." },
+{ statement: "The national animal of Scotland is the unicorn.", answer: "fact", explanation: "The unicorn has been Scotland's national animal since the 12th century, symbolizing purity and power." },
+{ statement: "The longest English word is 'pneumonoultramicroscopicsilicovolcanoconiosis'.", answer: "fiction", explanation: "While this 45-letter word refers to a lung disease, it was deliberately coined to be the longest word and isn't recognized by most dictionaries as a legitimate medical term." },
+{ statement: "The first oranges weren't orange.", answer: "fact", explanation: "Original oranges from Southeast Asia were green, and the orange color we know was developed through cultivation." },
 
+            science: [
+{ statement: "A day on Venus is longer than a year on Venus.", answer: "fact", explanation: "Venus takes 243 Earth days to rotate once but only 225 Earth days to orbit the Sun." },
+{ statement: "Humans only use 10% of their brains.", answer: "fiction", explanation: "This is a myth - brain scans show activity throughout the entire brain, even during sleep." },
+{ statement: "Octopuses have three hearts.", answer: "fact", explanation: "Two pump blood to the gills, while the third pumps it to the rest of the body. They all stop when the octopus swims." },
+{ statement: "Lightning never strikes the same place twice.", answer: "fiction", explanation: "Lightning often strikes the same place repeatedly, especially tall, pointy, isolated objects." },
+{ statement: "The smell of rain is called petrichor.", answer: "fact", explanation: "This term describes the earthy scent produced when rain falls on dry soil, caused by bacteria and plant oils." },
+{ statement: "Goldfish have a three-second memory.", answer: "fiction", explanation: "Studies show goldfish can remember things for months and can be trained to perform tricks." },
+{ statement: "A teaspoon of neutron star material would weigh about 10 million tons.", answer: "fact", explanation: "Neutron stars are so dense that their material packs the mass of a mountain into a tiny space." },
+{ statement: "Chameleons change color to blend into their environment.", answer: "fiction", explanation: "They primarily change color due to temperature, mood, and communication, not camouflage." },
+{ statement: "There are more atoms in a glass of water than glasses of water in all the oceans.", answer: "fact", explanation: "A glass contains about 10^24 atoms, while Earth's oceans contain about 10^21 glasses worth of water." },
+{ statement: "The human nose can detect over one trillion different scents.", answer: "fact", explanation: "Recent research suggests our olfactory system is far more sensitive than previously believed." },
+            history: [
+{ statement: "The Titanic was advertised as 'unsinkable' before its maiden voyage.", answer: "fiction", explanation: "While considered very safe, the White Star Line never actually claimed it was unsinkable in official materials." },
+{ statement: "Napoleon Bonaparte was actually average height for his time.", answer: "fact", explanation: "At 5'7\", he was slightly taller than the average Frenchman, but British propaganda exaggerated his shortness." },
+{ statement: "The Great Fire of London in 1666 killed more people than any other fire in British history.", answer: "fiction", explanation: "Remarkably, only 6 verified deaths occurred, though it destroyed 13,000+ houses." },
+{ statement: "The ancient Romans used urine as mouthwash.", answer: "fact", explanation: "Ammonia in urine acted as a cleaning agent, though this practice was eventually abandoned." },
+{ statement: "The Hundred Years' War actually lasted 116 years.", answer: "fact", explanation: "The series of conflicts between England and France ran from 1337 to 1453." },
+{ statement: "Abraham Lincoln wrote the Gettysburg Address on the back of an envelope.", answer: "fiction", explanation: "He carefully prepared it in advance, though the myth persists from eyewitness accounts." },
+{ statement: "The Library of Alexandria was destroyed in a single catastrophic fire.", answer: "fiction", explanation: "It declined gradually over centuries due to multiple events, not one sudden destruction." },
+{ statement: "The first computer programmer was a woman, Ada Lovelace.", answer: "fact", explanation: "She wrote algorithms for Charles Babbage's proposed Analytical Engine in the 1840s." },
+{ statement: "The Wright brothers flew the first airplane in 1901.", answer: "fiction", explanation: "Their famous first flight was December 17, 1903 at Kitty Hawk, North Carolina." },
+            animals: [
+{ statement: "A shrimp's heart is in its head.", answer: "fact", explanation: "Like all arthropods, shrimp have their main organs in their cephalothorax (head area)." },
+{ statement: "Bulls are enraged by the color red.", answer: "fiction", explanation: "Bulls are colorblind to red - they react to the movement of the cape, not its color." },
+{ statement: "Koalas have fingerprints almost identical to humans.", answer: "fact", explanation: "Under a microscope, koala prints are virtually indistinguishable from human ones." },
+{ statement: "Camels store water in their humps.", answer: "fiction", explanation: "Humps store fat for energy; their water is stored throughout their body tissues." },
+{ statement: "A group of crows is called a murder.", answer: "fact", explanation: "This poetic term dates back to 15th century English folklore about crow behavior." },
+{ statement: "Touching a baby bird will make its mother reject it.", answer: "fiction", explanation: "Most birds have a poor sense of smell and won't abandon babies touched by humans." },
+{ statement: "Polar bears have black skin under their white fur.", answer: "fact", explanation: "The black skin helps absorb heat, while the translucent fur reflects visible light." },
+{ statement: "Bats are blind.", answer: "fiction", explanation: "All bat species can see, and many use vision along with echolocation." },
+{ statement: "The blue whale's heart is the size of a small car.", answer: "fact", explanation: "Their hearts weigh about 400 pounds and can be 5 feet long by 4 feet wide." },
+{ statement: "Elephants are the only animals that can't jump.", answer: "fiction", explanation: "While adult elephants can't jump, several other large mammals also can't jump." },
+            geography: [
+{ statement: "Canada has more lakes than the rest of the world's lakes combined.", answer: "fact", explanation: "Canada contains about 60% of the world's lakes, with over 2 million lakes within its borders." },
+{ statement: "The Sahara is the world's largest desert.", answer: "fact", explanation: "At 3.6 million square miles, it's larger than Antarctica's polar desert by about 0.4 million square miles." },
+{ statement: "The Dead Sea is the lowest point on Earth.", answer: "fiction", explanation: "While very low at -1,412 ft, Antarctica's Denman Glacier reaches -3,500 ft below sea level." },
+{ statement: "Istanbul is the only city spanning two continents.", answer: "fiction", explanation: "Several cities span Europe and Asia, including Atyrau (Kazakhstan) and Magnitogorsk (Russia)." },
+{ statement: "Alaska is the westernmost, easternmost, and northernmost U.S. state.", answer: "fact", explanation: "Due to the Aleutian Islands crossing the 180th meridian, Alaska reaches into the Eastern Hemisphere." },
+{ statement: "The Amazon River is the longest river in the world.", answer: "fiction", explanation: "The Nile is about 4,132 miles long, while the Amazon is about 3,977 miles (measurements vary by source)." },
+{ statement: "France has the most time zones of any country.", answer: "fact", explanation: "Due to overseas territories, France has 12 time zones, beating Russia's 11 and the U.S.'s 9." },
+{ statement: "Mount Everest is the tallest mountain from base to summit.", answer: "fiction", explanation: "Hawaii's Mauna Kea is taller when measured from its underwater base (33,500 ft vs Everest's 29,032 ft)." },
+{ statement: "There are no rivers in Saudi Arabia.", answer: "fiction", explanation: "While it has no permanent rivers, it has hundreds of wadis - riverbeds that fill during rains." },
+{ statement: "The Pacific Ocean is shrinking while the Atlantic is expanding.", answer: "fact", explanation: "Plate tectonics cause the Pacific to shrink about 1 inch per year while the Atlantic widens." },
         // Game state management
         const gameState = {
             currentQuestions: [],
