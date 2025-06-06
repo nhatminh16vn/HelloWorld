@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIÊU GAME BẮT BÓNG PRO MAX</title>
     <style>
+        // Đảm bảo âm thanh luôn reset trước khi play
+catchSound.currentTime = 0;
+powerupSound.currentTime = 0;
+bombSound.currentTime = 0;
+comboSound.currentTime = 0;
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Roboto:wght@400;700&display=swap');
         
         :root {
@@ -824,63 +829,71 @@
         }
         
         // Kích hoạt powerup
-        function activatePowerup(type) {
-            powerupSound.currentTime = 0;
-            powerupSound.play();
-            
-            let duration = 0;
-            let text = '';
-            
-            switch(type) {
-                case 'double':
-                    powerups.double.active = true;
-                    duration = 10000; // 10 giây
-                    powerups.double.endTime = Date.now() + duration;
-                    text = 'NHÂN ĐÔI ĐIỂM!';
-                    break;
-                case 'slow':
-                    powerups.slow.active = true;
-                    duration = 8000; // 8 giây
-                    powerups.slow.endTime = Date.now() + duration;
-                    text = 'LÀM CHẬM BÓNG!';
-                    break;
-                case 'big':
-                    powerups.big.active = true;
-                    duration = 12000; // 12 giây
-                    powerups.big.endTime = Date.now() + duration;
-                    basket.width = 180; // Tăng kích thước giỏ
-                    text = 'GIỎ LỚN!';
-                    break;
-            }
-            
-            // Hiển thị indicator
-            powerupText.textContent = text;
-            powerupIndicator.style.borderColor = BALL_TYPES[ball.type].color;
-            powerupIndicator.classList.add('active');
-            
-            // Tự động tắt indicator sau 2 giây
-            setTimeout(() => {
-                powerupIndicator.classList.remove('active');
-            }, 2000);
-        }
+       function activatePowerup(type) {
+    powerupSound.currentTime = 0;
+    powerupSound.play();
+    
+    let duration = 0;
+    let text = '';
+    let color = '#00CEFF'; // Màu mặc định
+    
+    switch(type) {
+        case 'double':
+            powerups.double.active = true;
+            duration = 10000;
+            powerups.double.endTime = Date.now() + duration;
+            text = 'NHÂN ĐÔI ĐIỂM!';
+            color = BALL_TYPES.DOUBLE.color;
+            break;
+        case 'slow':
+            powerups.slow.active = true;
+            duration = 8000;
+            powerups.slow.endTime = Date.now() + duration;
+            text = 'LÀM CHẬM BÓNG!';
+            color = BALL_TYPES.SLOW.color;
+            break;
+        case 'big':
+            powerups.big.active = true;
+            duration = 12000;
+            powerups.big.endTime = Date.now() + duration;
+            basket.width = 180;
+            text = 'GIỎ LỚN!';
+            color = BALL_TYPES.BIG.color;
+            break;
+    }
+    
+    powerupText.textContent = text;
+    powerupIndicator.style.borderColor = color;
+    powerupIndicator.classList.add('active');
+    
+    setTimeout(() => {
+        powerupIndicator.classList.remove('active');
+    }, 2000);
         
         // Cập nhật powerups
         function updatePowerups() {
-            const now = Date.now();
-            let powerupActive = false;
+    const now = Date.now();
+    let powerupActive = false;
+    
+    for (let p in powerups) {
+        if (powerups[p].active && now >= powerups[p].endTime) {
+            powerups[p].active = false;
             
-            for (let p in powerups) {
-                if (powerups[p].active && now >= powerups[p].endTime) {
-                    powerups[p].active = false;
+            if (p === 'big') {
+                basket.width = 120; // Reset về kích thước ban đầu
+                basket.x = Math.min(basket.x, canvas.width - basket.width); // Đảm bảo không vượt khỏi canvas
+            }
+        }
+        
+        if (powerups[p].active) powerupActive = true;
+          powerups[p].active = false;
                     
                     // Reset giỏ nếu là powerup big
                     if (p === 'big') {
                         basket.width = 120;
                     }
                 }
-                
-                if (powerups[p].active) powerupActive = true;
-            }
+           }
             
             // Hiển thị powerup active trên UI
             if (powerupActive) {
@@ -943,7 +956,22 @@
             if (combo < 15) return '#FFD600';
             return '#FF5252';
         }
-        
+        if (ball.type === 'BOMB') {
+    bombSound.currentTime = 0;
+    bombSound.play();
+    
+    // Hiệu ứng nổ
+    ctx.fillStyle = 'rgba(255, 82, 82, 0.7)';
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, 50, 0, Math.PI * 2);
+    ctx.fill();
+    
+    setTimeout(() => {
+        endGame();
+    }, 300); // Delay để hiệu ứng nổ kịp hiển thị
+    
+    return;
+}
         // Sự kiện bàn phím
         document.addEventListener('keydown', (e) => {
             if (!gameRunning) return;
