@@ -2,418 +2,253 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8" />
-<title>Game Hardcore x999999</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Game Bóng Nảy Cool x999999999</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap');
   body {
     margin: 0;
     overflow: hidden;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    background: radial-gradient(circle at center, #0f2027, #203a43, #2c5364);
+    font-family: 'Poppins', sans-serif;
     color: white;
-  }
-  #gameArea {
-    width: 100vw;
-    height: 100vh;
-    position: relative;
-    overflow: hidden;
-  }
-  #player {
-    width: 50px;
-    height: 50px;
-    background: linear-gradient(135deg, #ff416c, #ff4b2b);
-    border-radius: 12px;
-    position: absolute;
-    box-shadow: 0 0 15px #ff416c;
-    transition: box-shadow 0.2s ease;
-  }
-  #player.hit {
-    animation: flashRed 0.3s;
-  }
-  @keyframes flashRed {
-    0%,100% { box-shadow: 0 0 15px #ff416c; background: linear-gradient(135deg, #ff416c, #ff4b2b); }
-    50% { box-shadow: 0 0 25px #ff0000; background: #ff0000; }
-  }
-  .obstacle {
-    width: 100px;
-    height: 100px;
-    background: linear-gradient(45deg, #434343, #000000);
-    position: absolute;
-    border-radius: 10px;
-    box-shadow: inset 0 0 15px #000000;
-  }
-  #goal {
-    width: 60px;
-    height: 60px;
-    background: radial-gradient(circle, #00ff6a, #00802b);
-    position: absolute;
-    border-radius: 15px;
-    box-shadow: 0 0 15px #00ff6a;
-    filter: drop-shadow(0 0 8px #00ff6a);
-  }
-  #message, #levelDisplay, #timer, #highScoreDisplay {
-    position: absolute;
-    font-size: 24px;
-    padding: 6px 12px;
-    background: rgba(0,0,0,0.6);
-    border-radius: 12px;
     user-select: none;
   }
-  #message {
+  #score {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 30px;
+    font-weight: 700;
+    text-shadow: 0 0 10px #00ffe7, 0 0 20px #00ffe7;
+    z-index: 10;
+  }
+  #gameOver {
+    position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 40px;
-    color: #ff4b2b;
+    font-size: 48px;
+    color: #ff1744;
+    font-weight: 800;
+    text-shadow: 0 0 15px #ff1744;
     display: none;
-    text-shadow: 0 0 10px #ff4b2b;
+    z-index: 10;
   }
-  #levelDisplay {
-    top: 10px;
-    right: 10px;
-  }
-  #timer {
-    top: 10px;
-    left: 10px;
-  }
-  #highScoreDisplay {
-    top: 50px;
-    right: 10px;
-  }
-  /* Boss style */
-  .boss {
-    width: 150px;
-    height: 150px;
-    background: radial-gradient(circle, #800000, #400000);
-    position: absolute;
-    border-radius: 20px;
-    border: 5px solid #ff0000;
-    box-shadow: 0 0 20px #ff0000;
-    animation: bossMove 2s infinite alternate ease-in-out;
-  }
-  @keyframes bossMove {
-    from { transform: translateX(0); }
-    to { transform: translateX(350px); }
-  }
-  /* Bullet style */
-  .bullet {
-    width: 15px;
-    height: 15px;
-    background: radial-gradient(circle, #ffff00, #ff9900);
-    border-radius: 50%;
-    position: absolute;
-    box-shadow: 0 0 12px #ffff00;
+  canvas {
+    display: block;
+    margin: 0 auto;
+    background: transparent;
+    filter: drop-shadow(0 0 10px #00ffe7);
   }
 </style>
 </head>
 <body>
-  <div id="gameArea">
-    <div id="player"></div>
-    <div id="goal"></div>
-    <div id="message"></div>
-    <div id="levelDisplay">Level: 1</div>
-    <div id="timer">⏱️ 30s</div>
-    <div id="highScoreDisplay">🏅 Kỷ lục: 1</div>
-  </div>
+  <div id="score">Điểm: 0</div>
+  <div id="gameOver">Game Over! Nhấn F5 để chơi lại.</div>
+  <canvas id="gameCanvas" width="600" height="450"></canvas>
 
-  <script>
-    const gameArea = document.getElementById("gameArea");
-    const player = document.getElementById("player");
-    const goal = document.getElementById("goal");
-    const message = document.getElementById("message");
-    const levelDisplay = document.getElementById("levelDisplay");
-    const timerDisplay = document.getElementById("timer");
-    const highScoreDisplay = document.getElementById("highScoreDisplay");
+  <!-- Âm thanh -->
+  <audio id="bounceSound" src="https://actions.google.com/sounds/v1/sports/basketball_bounce.ogg" preload="auto"></audio>
+  <audio id="gameOverSound" src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg" preload="auto"></audio>
 
-    const playerSize = 50;
-    let posX = 0, posY = 0;
-    let obstacles = [];
-    let bullets = [];
-    let level = 1;
-    const maxLevels = 30;
-    let step = 10;
-    let timeLeft = 30;
-    let timer;
-    let gameOver = false;
-    let highScore = localStorage.getItem("highScore") || 1;
-    highScoreDisplay.innerText = `🏅 Kỷ lục: ${highScore}`;
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
 
-    function getRandom(min, max) {
-      return Math.floor(Math.random() * (max - min)) + min;
-    }
+  const bounceSound = document.getElementById('bounceSound');
+  const gameOverSound = document.getElementById('gameOverSound');
 
-    function createObstacle(x, y) {
-      const obs = document.createElement("div");
-      obs.classList.add("obstacle");
-      obs.style.left = `${x}px`;
-      obs.style.top = `${y}px`;
-      gameArea.appendChild(obs);
-      obstacles.push(obs);
-    }
+  // Background particles for cool effect
+  const particles = [];
+  const particleCount = 60;
+  for(let i=0; i<particleCount; i++){
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      radius: Math.random() * 1.5 + 0.5,
+      alpha: Math.random() * 0.5 + 0.3,
+      speedY: Math.random() * 0.3 + 0.1,
+      speedX: (Math.random()-0.5)*0.2,
+    });
+  }
 
-    function clearObstacles() {
-      obstacles.forEach(o => o.remove());
-      obstacles = [];
-    }
+  function drawParticles(){
+    particles.forEach(p => {
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(0,255,231,${p.alpha})`;
+      ctx.shadowColor = '#00fff0';
+      ctx.shadowBlur = 8;
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+      ctx.fill();
+      p.y -= p.speedY;
+      p.x += p.speedX;
+      if(p.y < 0) p.y = canvas.height;
+      if(p.x > canvas.width) p.x = 0;
+      if(p.x < 0) p.x = canvas.width;
+    });
+  }
 
-    function clearBullets() {
-      bullets.forEach(b => b.remove());
-      bullets = [];
-    }
+  const ball = {
+    x: canvas.width/2,
+    y: canvas.height/2,
+    radius: 20,
+    dx: 5,
+    dy: -5,
+    colorStops: ['#00fff0', '#00b8a9', '#005f56'],
+    angle: 0,
+    speedUp: 0,
+  };
 
-    function checkCollision(rect1, rect2) {
-      return !(
-        rect1.right < rect2.left ||
-        rect1.left > rect2.right ||
-        rect1.bottom < rect2.top ||
-        rect1.top > rect2.bottom
-      );
-    }
+  const paddle = {
+    width: 120,
+    height: 18,
+    x: (canvas.width - 120)/2,
+    y: canvas.height - 40,
+    speed: 10,
+    dx: 0,
+    colorStops: ['#ff1744', '#d50000', '#ff5252'],
+    glowAlpha: 0,
+  };
 
-    function isOverlapping(x, y, width, height, existingElements) {
-      const rect1 = {
-        left: x,
-        right: x + width,
-        top: y,
-        bottom: y + height
-      };
-      for (const el of existingElements) {
-        const rect2 = el.getBoundingClientRect();
-        if (!(rect1.right < rect2.left || rect1.left > rect2.right ||
-              rect1.bottom < rect2.top || rect1.top > rect2.bottom)) {
-          return true;
-        }
-      }
-      return false;
-    }
+  let score = 0;
+  let isGameOver = false;
+  const scoreElement = document.getElementById('score');
+  const gameOverElement = document.getElementById('gameOver');
 
-    function spawnPlayer() {
-      let tries = 0;
-      do {
-        posX = getRandom(0, window.innerWidth - playerSize);
-        posY = getRandom(0, window.innerHeight - playerSize);
-        tries++;
-      } while (isOverlapping(posX, posY, playerSize, playerSize, obstacles) && tries < 50);
-      player.style.left = posX + "px";
-      player.style.top = posY + "px";
-    }
+  // Linear gradient helper
+  function createGradient(x, y, radius, colors){
+    const gradient = ctx.createRadialGradient(x, y, radius*0.3, x, y, radius);
+    colors.forEach((c,i) => {
+      gradient.addColorStop(i/(colors.length-1), c);
+    });
+    return gradient;
+  }
 
-    function spawnGoal() {
-      let tries = 0;
-      let goalX, goalY;
-      do {
-        goalX = getRandom(0, window.innerWidth - 60);
-        goalY = getRandom(0, window.innerHeight - 60);
-        tries++;
-      } while (isOverlapping(goalX, goalY, 60, 60, obstacles) && tries < 50);
-      goal.style.left = goalX + "px";
-      goal.style.top = goalY + "px";
-    }
+  function drawBall(){
+    ball.angle += 0.05;
+    // Animate gradient color shift
+    const gradient = createGradient(ball.x, ball.y, ball.radius, ball.colorStops);
+    ctx.save();
+    ctx.shadowColor = '#00fff0';
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
 
-    let boss = null;
-    let bossDirection = 1;
-    let bossSpeed = 2;
+    // Inner highlight circle
+    ctx.save();
+    ctx.globalAlpha = 0.5 + 0.5*Math.sin(ball.angle*5);
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(ball.x - ball.radius/3, ball.y - ball.radius/3, ball.radius/3, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
 
-    // Tạo đạn bắn từ boss
-    function createBullet(x, y, dx, dy) {
-      const bullet = document.createElement("div");
-      bullet.classList.add("bullet");
-      bullet.style.left = x + "px";
-      bullet.style.top = y + "px";
-      gameArea.appendChild(bullet);
-      bullets.push({el: bullet, dx, dy});
-    }
-
-    function moveBullets() {
-      bullets.forEach((b, i) => {
-        let left = parseFloat(b.el.style.left);
-        let top = parseFloat(b.el.style.top);
-        left += b.dx;
-        top += b.dy;
-        b.el.style.left = left + "px";
-        b.el.style.top = top + "px";
-
-        // Nếu ra ngoài màn thì xóa
-        if (left < 0 || left > window.innerWidth || top < 0 || top > window.innerHeight) {
-          b.el.remove();
-          bullets.splice(i, 1);
-        }
-
-        // Va chạm với player
-        const playerRect = player.getBoundingClientRect();
-        const bulletRect = b.el.getBoundingClientRect();
-        if (checkCollision(playerRect, bulletRect)) {
-          endGame("💥 Bạn bị trúng đạn! Thua rồi.");
-          player.classList.add("hit");
-          setTimeout(() => player.classList.remove("hit"), 300);
-        }
-      });
-    }
-
-    function startLevel() {
-      clearObstacles();
-      clearBullets();
-      if (boss) {
-        boss.remove();
-        boss = null;
-      }
-      gameOver = false;
-      step = 10 + level * 0.8; // Tăng tốc dần
-      timeLeft = 30 - Math.floor(level / 10) * 5; // Cứ 10 level giảm 5 giây
-      if (timeLeft < 10) timeLeft = 10;
-
-      // Tạo chướng ngại vật
-      if ([10, 20, 30].includes(level)) {
-        // Boss level
-        boss = document.createElement("div");
-        boss.classList.add("boss");
-        boss.style.top = getRandom(100, window.innerHeight - 200) + "px";
-        boss.style.left = getRandom(100, window.innerWidth - 400) + "px";
-        gameArea.appendChild(boss);
-        obstacles.push(boss);
-      } else {
-        // Tạo chướng ngại vật nhiều và khó hơn
-        const obstacleCount = Math.min(5 + level * 1.5, 40);
-        for (let i = 0; i < obstacleCount; i++) {
-          let ox, oy, tries = 0;
-          do {
-            ox = getRandom(0, window.innerWidth - 100);
-            oy = getRandom(0, window.innerHeight - 100);
-            tries++;
-          } while (isOverlapping(ox, oy, 100, 100, obstacles) && tries < 50);
-          createObstacle(ox, oy);
-        }
-      }
-
-      spawnPlayer();
-      spawnGoal();
-
-      levelDisplay.innerText = `Level: ${level}`;
-      message.style.display = "none";
-      timerDisplay.innerText = `⏱️ ${timeLeft}s`;
-
-      clearInterval(timer);
-      timer = setInterval(() => {
-        if (gameOver) return;
-        timeLeft--;
-        if (timeLeft <= 0) {
-          endGame("⏰ Hết giờ! Thua rồi.");
-        } else {
-          timerDisplay.innerText = `⏱️ ${timeLeft}s`;
-        }
-      }, 1000);
-    }
-
-    function endGame(text) {
-      if (gameOver) return;
-      message.innerText = text;
-      message.style.display = "block";
-      gameOver = true;
-      clearInterval(timer);
-
-      // Cập nhật high score
-      if (level > highScore) {
-        highScore = level;
-        localStorage.setItem("highScore", highScore);
-        highScoreDisplay.innerText = `🏅 Kỷ lục: ${highScore}`;
-        message.innerText += " 🎉 Kỷ lục mới!";
-      }
-    }
-
-    function nextLevel() {
-      level++;
-      if (level > maxLevels) {
-        endGame("🏆 Bạn đã hoàn thành 30 màn chơi! Tuyệt vời!");
-        return;
-      }
-      startLevel();
-    }
-
-    document.addEventListener("keydown", (event) => {
-      if (gameOver) return;
-
-      let newX = posX;
-      let newY = posY;
-
-      switch(event.key) {
-        case "ArrowUp": newY -= step; break;
-        case "ArrowDown": newY += step; break;
-        case "ArrowLeft": newX -= step; break;
-        case "ArrowRight": newX += step; break;
-      }
-
-      // Giới hạn ra ngoài màn hình
-      newX = Math.max(0, Math.min(newX, window.innerWidth - playerSize));
-      newY = Math.max(0, Math.min(newY, window.innerHeight - playerSize));
-
-      player.style.left = newX + "px";
-      player.style.top = newY + "px";
-
-      const playerRect = player.getBoundingClientRect();
-
-      // Kiểm tra va chạm với chướng ngại vật
-      for (let obs of obstacles) {
-        const obsRect = obs.getBoundingClientRect();
-        if (checkCollision(playerRect, obsRect)) {
-          endGame("💥 Bạn đã va chạm! Thua rồi.");
-          player.classList.add("hit");
-          setTimeout(() => player.classList.remove("hit"), 300);
-          return;
-        }
-      }
-
-      // Kiểm tra về đích
-      const goalRect = goal.getBoundingClientRect();
-      if (checkCollision(playerRect, goalRect)) {
-        nextLevel();
-      }
-
-      posX = newX;
-      posY = newY;
+  function drawPaddle(){
+    const gradient = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x + paddle.width, paddle.y);
+    paddle.colorStops.forEach((c,i) => {
+      gradient.addColorStop(i/(paddle.colorStops.length-1), c);
     });
 
-    // Điều khiển boss di chuyển và bắn đạn
-    function bossActions() {
-      if (!boss) return;
+    ctx.save();
+    ctx.shadowColor = `rgba(255, 23, 68, ${paddle.glowAlpha})`;
+    ctx.shadowBlur = 20 * paddle.glowAlpha;
+    ctx.fillStyle = gradient;
+    ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+    ctx.restore();
+  }
 
-      let left = parseFloat(boss.style.left);
-      left += bossSpeed * bossDirection;
+  function movePaddle(){
+    paddle.x += paddle.dx;
+    if(paddle.x < 0) paddle.x = 0;
+    if(paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+  }
 
-      // Đổi chiều khi chạm cạnh
-      if (left < 0 || left > window.innerWidth - 150) {
-        bossDirection *= -1;
-      } else {
-        boss.style.left = left + "px";
-      }
+  function increaseDifficulty(){
+    // Tăng tốc độ bóng mỗi 5 điểm, tối đa +5 đơn vị
+    const speedIncrease = Math.min(5, 0.5 * Math.floor(score / 5));
+    const signX = ball.dx > 0 ? 1 : -1;
+    const signY = ball.dy > 0 ? 1 : -1;
+    ball.dx = signX * (5 + speedIncrease);
+    ball.dy = signY * (5 + speedIncrease);
+  }
 
-      // Bắn đạn ngẫu nhiên với xác suất tăng dần theo level
-      if (Math.random() < 0.03 + level * 0.002) {
-        // Bắn đạn từ boss đến player
-        const bossRect = boss.getBoundingClientRect();
-        const playerRect = player.getBoundingClientRect();
-        const startX = bossRect.left + bossRect.width / 2;
-        const startY = bossRect.top + bossRect.height / 2;
-        const dirX = playerRect.left + playerRect.width / 2 - startX;
-        const dirY = playerRect.top + playerRect.height / 2 - startY;
-        const length = Math.sqrt(dirX * dirX + dirY * dirY);
-        const bulletSpeed = 6 + level * 0.2;
-        const dx = (dirX / length) * bulletSpeed;
-        const dy = (dirY / length) * bulletSpeed;
-        createBullet(startX, startY, dx, dy);
-      }
+  function update(){
+    if(isGameOver) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawParticles();
+
+    drawBall();
+    drawPaddle();
+
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+
+    // Nảy bóng chạm tường trái/phải
+    if(ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0){
+      ball.dx = -ball.dx;
     }
 
-    // Vòng lặp game chính
-    function gameLoop() {
-      if (!gameOver) {
-        bossActions();
-        moveBullets();
-      }
-      requestAnimationFrame(gameLoop);
+    // Nảy bóng chạm tường trên
+    if(ball.y - ball.radius < 0){
+      ball.dy = -ball.dy;
     }
 
-    // Bắt đầu game lần đầu
-    startLevel();
-    gameLoop();
-  </script>
+    // Bóng chạm paddle
+    if(
+      ball.y + ball.radius >= paddle.y &&
+      ball.x > paddle.x &&
+      ball.x < paddle.x + paddle.width
+    ){
+      ball.dy = -ball.dy;
+      score++;
+      scoreElement.textContent = 'Điểm: ' + score;
+
+      // Paddle glow effect
+      paddle.glowAlpha = 1;
+      setTimeout(() => {
+        paddle.glowAlpha = 0;
+      }, 150);
+
+      bounceSound.currentTime = 0;
+      bounceSound.play();
+
+      increaseDifficulty();
+    }
+
+    // Bóng rơi xuống dưới -> game over
+    if(ball.y - ball.radius > canvas.height){
+      gameOver();
+    }
+
+    movePaddle();
+    requestAnimationFrame(update);
+  }
+
+  function gameOver(){
+    isGameOver = true;
+    gameOverElement.style.display = 'block';
+    gameOverSound.play();
+  }
+
+  document.addEventListener('keydown', e => {
+    if(e.key === 'ArrowLeft') paddle.dx = -paddle.speed;
+    else if(e.key === 'ArrowRight') paddle.dx = paddle.speed;
+  });
+
+  document.addEventListener('keyup', e => {
+    if(e.key === 'ArrowLeft' || e.key === 'ArrowRight'){
+      paddle.dx = 0;
+    }
+  });
+
+  update();
+</script>
 </body>
 </html>
