@@ -1,202 +1,177 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Game Bóng Nảy Cool Fix</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap');
-  body {
-    margin: 0;
-    overflow: hidden;
-    background: radial-gradient(circle at center, #0f2027, #203a43, #2c5364);
-    font-family: 'Poppins', sans-serif;
-    color: white;
-    user-select: none;
-  }
-  #score {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 30px;
-    font-weight: 700;
-    text-shadow: 0 0 10px #00ffe7, 0 0 20px #00ffe7;
-    z-index: 10;
-  }
-  #gameOver {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 48px;
-    color: #ff1744;
-    font-weight: 800;
-    text-shadow: 0 0 15px #ff1744;
-    display: none;
-    z-index: 10;
-  }
-  canvas {
-    display: block;
-    margin: 0 auto;
-    background: transparent;
-    filter: drop-shadow(0 0 10px #00ffe7);
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Game Bóng Nảy + Nhạc Nền</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: radial-gradient(circle, #0f2027, #203a43, #2c5364);
+      font-family: 'Arial', sans-serif;
+      color: white;
+    }
+    #score {
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+      font-weight: bold;
+      z-index: 10;
+    }
+    #gameOver {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 36px;
+      color: red;
+      display: none;
+      z-index: 10;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      background: transparent;
+    }
+    #restartBtn {
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      font-size: 20px;
+      background: #00ffe7;
+      border: none;
+      border-radius: 10px;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      display: none;
+      z-index: 10;
+    }
+    #toggleMusicBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 20px;
+      background: transparent;
+      border: none;
+      color: white;
+      cursor: pointer;
+      z-index: 10;
+    }
+  </style>
 </head>
 <body>
-  <div id="score">Điểm: 0 | Kỷ lục: 0</div>
-  <div id="gameOver">Game Over! Nhấn nút Chơi lại để tiếp tục.</div>
-  <canvas id="gameCanvas" width="600" height="450"></canvas>
 
-  <!-- Âm thanh -->
-  <audio id="bounceSound" src="https://actions.google.com/sounds/v1/sports/basketball_bounce.ogg" preload="auto"></audio>
-  <audio id="gameOverSound" src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg" preload="auto"></audio>
+<canvas id="gameCanvas" width="600" height="450"></canvas>
+<div id="score">Điểm: 0 | Kỷ lục: 0</div>
+<div id="gameOver">Game Over!</div>
+<button id="restartBtn">Chơi lại</button>
+<button id="toggleMusicBtn">🔊</button>
+
+<!-- Âm thanh -->
+<audio id="bounceSound" src="https://actions.google.com/sounds/v1/sports/basketball_bounce.ogg" preload="auto"></audio>
+<audio id="gameOverSound" src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg" preload="auto"></audio>
+<audio id="bgMusic" src="https://cdn.pixabay.com/download/audio/2023/03/06/audio_83f0beef3d.mp3?filename=arcade-music-loop-14052.mp3" loop preload="auto"></audio>
 
 <script>
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-  const bounceSound = document.getElementById('bounceSound');
-  const gameOverSound = document.getElementById('gameOverSound');
+const scoreDisplay = document.getElementById('score');
+const gameOverDisplay = document.getElementById('gameOver');
+const restartBtn = document.getElementById('restartBtn');
+const toggleMusicBtn = document.getElementById('toggleMusicBtn');
 
-  // Background particles for cool effect
-  const particles = [];
-  const particleCount = 60;
-  for(let i=0; i<particleCount; i++){
-    particles.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      radius: Math.random() * 1.5 + 0.5,
-      alpha: Math.random() * 0.5 + 0.3,
-      speedY: Math.random() * 0.3 + 0.1,
-      speedX: (Math.random()-0.5)*0.2,
-    });
-  }
+const bounceSound = document.getElementById('bounceSound');
+const gameOverSound = document.getElementById('gameOverSound');
+const bgMusic = document.getElementById('bgMusic');
 
-  function drawParticles(){
-    particles.forEach(p => {
-      ctx.beginPath();
-      ctx.fillStyle = `rgba(0,255,231,${p.alpha})`;
-      ctx.shadowColor = '#00fff0';
-      ctx.shadowBlur = 8;
-      ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
-      ctx.fill();
-      p.y -= p.speedY;
-      p.x += p.speedX;
-      if(p.y < 0) p.y = canvas.height;
-      if(p.x > canvas.width) p.x = 0;
-      if(p.x < 0) p.x = canvas.width;
-    });
-  }
+let balls = [];
+let paddle = {
+  width: 120,
+  height: 15,
+  x: (canvas.width - 120) / 2,
+  y: canvas.height - 30,
+  dx: 0,
+  speed: 8
+};
+let score = 0;
+let highScore = localStorage.getItem('highScore') || 0;
+let isGameOver = false;
+let musicStarted = false;
 
-  const ball = {
-    x: canvas.width/2,
-    y: canvas.height/2,
-    radius: 20,
-    dx: 5,
+function createBall() {
+  return {
+    x: Math.random() * canvas.width,
+    y: canvas.height / 2,
+    radius: 15,
+    dx: (Math.random() > 0.5 ? 1 : -1) * (5 + Math.random() * 2),
     dy: -5,
-    colorStops: ['#00fff0', '#00b8a9', '#005f56'],
-    angle: 0,
+    angle: 0
   };
+}
 
-  const paddle = {
-    width: 120,
-    height: 18,
-    x: (canvas.width - 120)/2,
-    y: canvas.height - 40,
-    speed: 10,
-    dx: 0,
-    colorStops: ['#ff1744', '#d50000', '#ff5252'],
-    glowAlpha: 0,
-  };
+function resetGame() {
+  balls = [createBall()];
+  score = 0;
+  isGameOver = false;
+  paddle.x = (canvas.width - paddle.width) / 2;
+  updateScore();
+  gameOverDisplay.style.display = 'none';
+  restartBtn.style.display = 'none';
+  requestAnimationFrame(update);
+}
 
-  let score = 0;
-  let highScore = localStorage.getItem('highScore') || 0;
-  highScore = Number(highScore);
-  let isGameOver = false;
-  const scoreElement = document.getElementById('score');
-  const gameOverElement = document.getElementById('gameOver');
-
-  // Linear gradient helper
-  function createGradient(x, y, radius, colors){
-    const gradient = ctx.createRadialGradient(x, y, radius*0.3, x, y, radius);
-    colors.forEach((c,i) => {
-      gradient.addColorStop(i/(colors.length-1), c);
-    });
-    return gradient;
+function updateScore() {
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('highScore', highScore);
   }
+  scoreDisplay.textContent = `Điểm: ${score} | Kỷ lục: ${highScore}`;
+}
 
-  function drawBall(){
+function drawPaddle() {
+  ctx.fillStyle = '#ff5252';
+  ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+}
+
+function drawBalls() {
+  balls.forEach(ball => {
     ball.angle += 0.05;
-    const gradient = createGradient(ball.x, ball.y, ball.radius, ball.colorStops);
-    ctx.save();
-    ctx.shadowColor = '#00fff0';
-    ctx.shadowBlur = 20;
-    ctx.fillStyle = gradient;
     ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
+    ctx.fillStyle = '#00ffe7';
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
+  });
+}
 
-    ctx.save();
-    ctx.globalAlpha = 0.5 + 0.5*Math.sin(ball.angle*5);
-    ctx.fillStyle = 'white';
-    ctx.beginPath();
-    ctx.arc(ball.x - ball.radius/3, ball.y - ball.radius/3, ball.radius/3, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  }
+function movePaddle() {
+  paddle.x += paddle.dx;
+  if (paddle.x < 0) paddle.x = 0;
+  if (paddle.x + paddle.width > canvas.width)
+    paddle.x = canvas.width - paddle.width;
+}
 
-  function drawPaddle(){
-    const gradient = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x + paddle.width, paddle.y);
-    paddle.colorStops.forEach((c,i) => {
-      gradient.addColorStop(i/(paddle.colorStops.length-1), c);
-    });
+function update() {
+  if (isGameOver) return;
 
-    ctx.save();
-    ctx.shadowColor = `rgba(255, 23, 68, ${paddle.glowAlpha})`;
-    ctx.shadowBlur = 20 * paddle.glowAlpha;
-    ctx.fillStyle = gradient;
-    ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
-    ctx.restore();
-  }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawPaddle();
+  drawBalls();
+  movePaddle();
 
-  function movePaddle(){
-    paddle.x += paddle.dx;
-    if(paddle.x < 0) paddle.x = 0;
-    if(paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
-  }
+  balls.forEach((ball, index) => {
+    ball.x += ball.dx;
+    ball.y += ball.dy;
 
-  function increaseDifficulty(){
-    const speedIncrease = Math.min(5, 0.5 * Math.floor(score / 5));
-    const signX = ball.dx > 0 ? 1 : -1;
-    const signY = ball.dy > 0 ? 1 : -1;
-    ball.dx = signX * (5 + speedIncrease);
-    ball.dy = signY * (5 + speedIncrease);
-  }
+    if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width)
+      ball.dx = -ball.dx;
+    if (ball.y - ball.radius < 0) ball.dy = -ball.dy;
 
-  function updateScore() {
-    scoreElement.textContent = `Điểm: ${score} | Kỷ lục: ${highScore}`;
-    if(score > 0 && score % 10 === 0){
-      flashScore();
-    }
-    if(score > highScore){
-      highScore = score;
-      localStorage.setItem('highScore', highScore);
-    }
-  }
-
-  function flashScore() {
-    scoreElement.style.transition = 'color 0.3s ease';
-    scoreElement.style.color = '#00ffea';
-    setTimeout(() => {
-      scoreElement.style.color = 'white';
-    }, 300);
-  }
-
-  // Xử lý va chạm bóng với paddle đã fix lỗi dính
-  function checkPaddleCollision(){
     if (
       ball.y + ball.radius >= paddle.y &&
       ball.x > paddle.x &&
@@ -204,140 +179,65 @@
       ball.dy > 0
     ) {
       ball.dy = -ball.dy;
-      ball.y = paddle.y - ball.radius - 1; // fix dính bóng
+      ball.y = paddle.y - ball.radius - 1;
 
       score++;
       updateScore();
-
-      paddle.glowAlpha = 1;
-      setTimeout(() => {
-        paddle.glowAlpha = 0;
-      }, 150);
-
       bounceSound.currentTime = 0;
       bounceSound.play();
 
-      increaseDifficulty();
-    }
-  }
+      ball.dx *= 1.02;
+      ball.dy *= 1.02;
 
-  // Rung màn hình khi game over
-  function shakeScreen(duration = 600) {
-    const start = performance.now();
-    function shake(time){
-      const elapsed = time - start;
-      if(elapsed < duration){
-        const dx = (Math.random() - 0.5) * 10;
-        const dy = (Math.random() - 0.5) * 10;
-        canvas.style.transform = `translate(${dx}px, ${dy}px)`;
-        requestAnimationFrame(shake);
-      } else {
-        canvas.style.transform = 'translate(0, 0)';
+      if (score % 20 === 0) {
+        balls.push(createBall());
       }
     }
-    requestAnimationFrame(shake);
-  }
 
-  function gameOver(){
-    isGameOver = true;
-    gameOverElement.style.display = 'block';
-    shakeScreen();
-    gameOverSound.play();
-    showRestartButton();
-  }
-
-  // Nút chơi lại
-  const restartBtn = document.createElement('button');
-  restartBtn.textContent = 'Chơi lại';
-  Object.assign(restartBtn.style, {
-    position: 'absolute',
-    top: '60%',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    padding: '12px 24px',
-    fontSize: '20px',
-    borderRadius: '12px',
-    border: 'none',
-    backgroundColor: '#00ffe7',
-    color: '#003333',
-    fontWeight: '700',
-    cursor: 'pointer',
-    boxShadow: '0 0 15px #00ffe7',
-    userSelect: 'none',
-    display: 'none',
-    zIndex: 20,
-  });
-  document.body.appendChild(restartBtn);
-
-  function showRestartButton(){
-    restartBtn.style.display = 'block';
-  }
-
-  restartBtn.addEventListener('click', () => {
-    restartBtn.style.display = 'none';
-    gameOverElement.style.display = 'none';
-    resetGame();
-  });
-
-  function resetGame(){
-    score = 0;
-    updateScore();
-    ball.x = canvas.width / 2;
-    ball.y = canvas.height / 2;
-    ball.dx = 5;
-    ball.dy = -5;
-    paddle.x = (canvas.width - paddle.width) / 2;
-    isGameOver = false;
-    update();
-  }
-
-  function update(){
-    if(isGameOver) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawParticles();
-
-    drawBall();
-    drawPaddle();
-
-    ball.x += ball.dx;
-    ball.y += ball.dy;
-
-    // Va chạm tường trái/phải
-    if(ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0){
-      ball.dx = -ball.dx;
-    }
-
-    // Va chạm tường trên
-    if(ball.y - ball.radius < 0){
-      ball.dy = -ball.dy;
-    }
-
-    checkPaddleCollision();
-
-    // Bóng rơi dưới màn hình
-    if(ball.y - ball.radius > canvas.height){
+    if (ball.y - ball.radius > canvas.height) {
       gameOver();
     }
+  });
 
-    movePaddle();
-    requestAnimationFrame(update);
+  requestAnimationFrame(update);
+}
+
+function gameOver() {
+  isGameOver = true;
+  gameOverDisplay.style.display = 'block';
+  restartBtn.style.display = 'block';
+  gameOverSound.play();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!musicStarted) {
+    bgMusic.play().catch(() => {}); // Bắt đầu nhạc khi người chơi tương tác
+    musicStarted = true;
   }
+  if (e.key === 'ArrowLeft') paddle.dx = -paddle.speed;
+  if (e.key === 'ArrowRight') paddle.dx = paddle.speed;
+});
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') paddle.dx = 0;
+});
 
-  document.addEventListener('keydown', e => {
-    if(e.key === 'ArrowLeft') paddle.dx = -paddle.speed;
-    else if(e.key === 'ArrowRight') paddle.dx = paddle.speed;
-  });
+restartBtn.addEventListener('click', () => {
+  resetGame();
+});
 
-  document.addEventListener('keyup', e => {
-    if(e.key === 'ArrowLeft' || e.key === 'ArrowRight'){
-      paddle.dx = 0;
-    }
-  });
+toggleMusicBtn.addEventListener('click', () => {
+  if (bgMusic.paused) {
+    bgMusic.play();
+    toggleMusicBtn.textContent = '🔊';
+  } else {
+    bgMusic.pause();
+    toggleMusicBtn.textContent = '🔇';
+  }
+});
 
-  updateScore();
-  update();
-
+// Bắt đầu
+resetGame();
 </script>
+
 </body>
 </html>
