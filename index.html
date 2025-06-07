@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8" />
-<title>Bóng Nảy Neon Cyberpunk To Đẹp - Có Chọn Độ Khó</title>
+<title>Bóng Nảy Neon Cyberpunk - Có Chọn Độ Khó & 2 Nút Game Over</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
   html, body {
@@ -50,47 +50,47 @@
     z-index: 10;
   }
   #gameOver {
+    display: none;
+    text-align: center;
+    user-select: none;
+    z-index: 10;
     position: absolute;
     top: 48%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 72px;
     color: #f0f;
+    font-size: 72px;
     text-shadow:
       0 0 20px #f0f,
       0 0 40px #f0f,
       0 0 60px #ff00ff;
-    display: none;
-    user-select: none;
-    z-index: 10;
   }
-  #restartBtn {
-    position: absolute;
-    top: 62%;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 18px 38px;
+  #gameOver button {
+    padding: 14px 30px;
     font-size: 28px;
-    font-weight: 700;
-    background: #ff00ff;
+    margin: 20px 20px 0 20px;
     border: none;
     border-radius: 20px;
-    color: #111;
     cursor: pointer;
-    box-shadow:
-      0 0 20px #ff00ff,
-      0 0 50px #ff00ff;
-    transition: all 0.3s ease;
-    display: none;
-    user-select: none;
-    z-index: 10;
+    box-shadow: 0 0 20px;
+    color: #111;
+  }
+  #restartBtn {
+    background: #ff00ff;
+    box-shadow: 0 0 20px #ff00ff;
   }
   #restartBtn:hover {
     background: #e600e6;
-    box-shadow:
-      0 0 40px #ff00ff,
-      0 0 70px #ff00ff,
-      0 0 90px #ff00ff;
+    box-shadow: 0 0 40px #ff00ff;
+    color: white;
+  }
+  #homeBtn {
+    background: #0ff;
+    box-shadow: 0 0 20px #0ff;
+  }
+  #homeBtn:hover {
+    background: #00cccc;
+    box-shadow: 0 0 40px #0ff;
     color: white;
   }
   #toggleMusicBtn {
@@ -170,8 +170,15 @@
 
 <canvas id="gameCanvas" width="900" height="675"></canvas>
 <div id="score">Điểm: 0 | Kỷ lục: 0</div>
-<div id="gameOver">Game Over!</div>
-<button id="restartBtn">Chơi lại</button>
+
+<div id="gameOver">
+  Game Over!
+  <div>
+    <button id="restartBtn">Chơi lại</button>
+    <button id="homeBtn">Về trang chủ</button>
+  </div>
+</div>
+
 <button id="toggleMusicBtn" title="Bật/Tắt nhạc">🔊</button>
 
 <!-- Âm thanh -->
@@ -188,6 +195,7 @@ const startGameBtn = document.getElementById('startGameBtn');
 const scoreDisplay = document.getElementById('score');
 const gameOverDisplay = document.getElementById('gameOver');
 const restartBtn = document.getElementById('restartBtn');
+const homeBtn = document.getElementById('homeBtn');
 const toggleMusicBtn = document.getElementById('toggleMusicBtn');
 
 const bounceSound = document.getElementById('bounceSound');
@@ -237,6 +245,7 @@ function resetGame() {
   updateScore();
   gameOverDisplay.style.display = 'none';
   restartBtn.style.display = 'none';
+  homeBtn.style.display = 'none';
   toggleMusicBtn.style.display = 'block';
   requestAnimationFrame(update);
 }
@@ -296,31 +305,36 @@ function update() {
 
     if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width)
       ball.dx = -ball.dx;
-    if (ball.y - ball.radius < 0) ball.dy = -ball.dy;
+    if (ball.y - ball.radius < 0)
+      ball.dy = -ball.dy;
 
+    // Va chạm với paddle
     if (
       ball.y + ball.radius >= paddle.y &&
+      ball.y + ball.radius <= paddle.y + paddle.height &&
       ball.x > paddle.x &&
-      ball.x < paddle.x + paddle.width &&
-      ball.dy > 0
+      ball.x < paddle.x + paddle.width
     ) {
-      ball.dy = -ball.dy;
-      ball.y = paddle.y - ball.radius - 1;
-
-      score++;
-      updateScore();
-      bounceSound.currentTime = 0;
+      ball.dy = -Math.abs(ball.dy);
       bounceSound.play();
 
-      ball.dx *= 1.03;
-      ball.dy *= 1.03;
+      // Tăng điểm + cập nhật điểm
+      score++;
+      updateScore();
 
-      if (score - lastAddedBallScore >= difficultySettings[difficulty]) {
+      // Tăng tốc bóng theo điểm
+      ball.dx *= 1.05;
+      ball.dy *= 1.05;
+
+      // Check điểm để thêm bóng mới theo độ khó
+      const addBallThreshold = difficultySettings[difficulty];
+      if (score - lastAddedBallScore >= addBallThreshold) {
         balls.push(createBall());
         lastAddedBallScore = score;
       }
     }
 
+    // Bóng rơi dưới màn hình thì game over
     if (ball.y - ball.radius > canvas.height) {
       gameOver();
     }
@@ -332,33 +346,35 @@ function update() {
 function gameOver() {
   isGameOver = true;
   gameOverDisplay.style.display = 'block';
-  restartBtn.style.display = 'block';
+  restartBtn.style.display = 'inline-block';
+  homeBtn.style.display = 'inline-block';
   toggleMusicBtn.style.display = 'none';
   gameOverSound.play();
 }
 
-document.addEventListener('keydown', (e) => {
-  if (!musicStarted) {
-    bgMusic.play().catch(() => {});
-    musicStarted = true;
+// Bắt sự kiện bàn phím để điều khiển paddle
+document.addEventListener('keydown', e => {
+  if (e.code === 'ArrowLeft') {
+    paddle.dx = -paddle.speed;
+  } else if (e.code === 'ArrowRight') {
+    paddle.dx = paddle.speed;
   }
-  if (e.key === 'ArrowLeft') paddle.dx = -paddle.speed;
-  if (e.key === 'ArrowRight') paddle.dx = paddle.speed;
-});
-document.addEventListener('keyup', (e) => {
-  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') paddle.dx = 0;
 });
 
-restartBtn.addEventListener('click', () => {
-  resetGame();
-  scoreDisplay.style.display = 'block';
-  gameOverDisplay.style.display = 'none';
-  restartBtn.style.display = 'none';
-  toggleMusicBtn.style.display = 'block';
+document.addEventListener('keyup', e => {
+  if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+    paddle.dx = 0;
+  }
 });
 
+// Bật/tắt nhạc nền
 toggleMusicBtn.addEventListener('click', () => {
-  if (bgMusic.paused) {
+  if (!musicStarted) {
+    bgMusic.volume = 0.3;
+    bgMusic.play();
+    musicStarted = true;
+    toggleMusicBtn.textContent = '🔊';
+  } else if (bgMusic.paused) {
     bgMusic.play();
     toggleMusicBtn.textContent = '🔊';
   } else {
@@ -367,11 +383,37 @@ toggleMusicBtn.addEventListener('click', () => {
   }
 });
 
+// Bắt đầu game từ menu chọn độ khó
 startGameBtn.addEventListener('click', () => {
   difficulty = difficultySelect.value;
   document.getElementById('difficultySelect').style.display = 'none';
   scoreDisplay.style.display = 'block';
   resetGame();
+});
+
+// Xử lý nút chơi lại
+restartBtn.addEventListener('click', () => {
+  resetGame();
+  scoreDisplay.style.display = 'block';
+  gameOverDisplay.style.display = 'none';
+  restartBtn.style.display = 'none';
+  homeBtn.style.display = 'none';
+  toggleMusicBtn.style.display = 'block';
+});
+
+// Xử lý nút về trang chủ
+homeBtn.addEventListener('click', () => {
+  isGameOver = false;
+  balls = [];
+  score = 0;
+  lastAddedBallScore = 0;
+  scoreDisplay.style.display = 'none';
+  gameOverDisplay.style.display = 'none';
+  restartBtn.style.display = 'none';
+  homeBtn.style.display = 'none';
+  toggleMusicBtn.style.display = 'none';
+  document.getElementById('difficultySelect').style.display = 'block';
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 });
 
 </script>
