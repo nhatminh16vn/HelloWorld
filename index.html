@@ -200,10 +200,10 @@ function resetGame() {
 }
 
 function gameLoop() {
-  if (!running) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (gameOver) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Vẽ màn hình thua và hiện nút
     ctx.fillStyle = '#44aaff';
     ctx.font = '48px Arial';
     ctx.textAlign = 'center';
@@ -213,10 +213,11 @@ function gameLoop() {
 
     buttonsContainer.style.display = 'flex';
     running = false;
+
+    // vẫn gọi loop để vẽ nút và text
+    requestAnimationFrame(gameLoop);
     return;
   }
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   movePlayer();
 
