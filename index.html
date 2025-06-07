@@ -1,344 +1,133 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <title>Bóng Nảy Neon Cyberpunk</title>
+  <meta charset="UTF-8">
+  <title>Bí Ẩn Bảo Tàng Thế Giới</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
-    html, body {
-      margin: 0; padding: 0; height: 100%;
-      background: linear-gradient(270deg, #0f0c29, #302b63, #24243e);
-      background-size: 600% 600%;
-      animation: gradientBG 15s ease infinite;
-      font-family: 'Poppins', sans-serif;
-      overflow: hidden;
-      color: #0ff;
+    body {
+      background-color: #111;
+      color: #eee;
+      font-family: 'Georgia', serif;
+      max-width: 700px;
+      margin: auto;
+      padding: 20px;
     }
-    @keyframes gradientBG {
-      0%{background-position:0% 50%}
-      50%{background-position:100% 50%}
-      100%{background-position:0% 50%}
-    }
-    #gameCanvas {
-      display: block;
-      margin: 0 auto;
-      background: #111c;
-      box-shadow: 0 0 30px #0ff, 0 0 60px #0ff, inset 0 0 15px #0ff, inset 0 0 40px #0ff;
-      border-radius: 20px;
-      width: 900px;
-      height: 675px;
-      user-select: none;
-    }
-    #score, #gameOver, #toggleMusicBtn {
-      position: absolute;
-      z-index: 10;
-      user-select: none;
-    }
-    #score {
-      top: 15px; left: 50%; transform: translateX(-50%);
-      font-size: 36px;
-      text-shadow: 0 0 8px #0ff, 0 0 25px #0ff, 0 0 40px #0ff;
-    }
-    #gameOver {
-      top: 48%; left: 50%; transform: translate(-50%, -50%);
-      font-size: 72px;
-      text-align: center;
-      color: #f0f;
-      text-shadow: 0 0 20px #f0f, 0 0 40px #f0f, 0 0 60px #f0f;
-      display: none;
-    }
-    #gameOver button {
-      padding: 14px 30px;
-      font-size: 28px;
-      margin: 20px;
-      border: none;
-      border-radius: 20px;
-      cursor: pointer;
-      color: #111;
-    }
-    #restartBtn {
-      background: #ff00ff;
-      box-shadow: 0 0 20px #ff00ff;
-    }
-    #homeBtn {
-      background: #0ff;
-      box-shadow: 0 0 20px #0ff;
-    }
-    #toggleMusicBtn {
-      top: 18px; right: 20px;
-      font-size: 36px;
-      background: none;
-      border: none;
-      color: #0ff;
-      cursor: pointer;
-      text-shadow: 0 0 15px #0ff, 0 0 30px #0ff;
-      display: none;
-    }
-    #difficultySelect {
-      text-align: center;
-      margin: 25px auto;
-      user-select: none;
-    }
-    #difficultySelect label, #difficulty {
-      font-size: 22px;
-      color: #0ff;
-      text-shadow: 0 0 10px #0ff;
-    }
-    #difficulty {
-      padding: 6px 14px;
-      border-radius: 8px;
-      background: #111;
-      box-shadow: 0 0 12px #0ff inset;
-      color: #0ff;
-      border: none;
-    }
-    #startGameBtn {
+    .scene-text {
+      margin-bottom: 20px;
       font-size: 18px;
-      padding: 8px 22px;
-      margin-left: 15px;
-      border-radius: 12px;
+    }
+    .choice {
+      display: block;
+      background-color: #444;
+      color: white;
+      padding: 10px;
+      margin: 10px 0;
       border: none;
-      background: #ff00ff;
-      color: #111;
-      box-shadow: 0 0 15px #ff00ff, 0 0 30px #ff00ff;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .choice:hover {
+      background-color: #666;
     }
   </style>
 </head>
 <body>
 
-<div id="difficultySelect">
-  <label for="difficulty">Chọn độ khó:</label>
-  <select id="difficulty">
-    <option value="de">Dễ (20đ thêm bóng)</option>
-    <option value="trungbinh" selected>Trung bình (10đ thêm bóng)</option>
-    <option value="kho">Khó (5đ thêm bóng)</option>
-    <option value="ratkho">Rất khó (2đ thêm bóng)</option>
-    <option value="thientai">Thiên tài (1đ thêm bóng)</option>
-  </select>
-  <button id="startGameBtn">Bắt đầu chơi</button>
-</div>
+  <h1>🏛️ Bí Ẩn Bảo Tàng Thế Giới</h1>
+  <div id="scene" class="scene-text"></div>
+  <div id="choices"></div>
 
-<canvas id="gameCanvas" width="900" height="675"></canvas>
-<div id="score">Điểm: 0 | Kỷ lục: 0</div>
-<div id="gameOver">
-  Game Over!
-  <div>
-    <button id="restartBtn">Chơi lại</button>
-    <button id="homeBtn">Về trang chủ</button>
-  </div>
-</div>
-<button id="toggleMusicBtn" title="Bật/Tắt nhạc">🔊</button>
-
-<audio id="bounceSound" src="https://actions.google.com/sounds/v1/sports/basketball_bounce.ogg" preload="auto"></audio>
-<audio id="gameOverSound" src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg" preload="auto"></audio>
-<audio id="bgMusic" src="https://cdn.pixabay.com/download/audio/2023/03/06/audio_83f0beef3d.mp3?filename=arcade-music-loop-14052.mp3" loop preload="auto"></audio>
-
-<script>
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-const scoreDisplay = document.getElementById("score");
-const gameOverDisplay = document.getElementById("gameOver");
-const restartBtn = document.getElementById("restartBtn");
-const homeBtn = document.getElementById("homeBtn");
-const toggleMusicBtn = document.getElementById("toggleMusicBtn");
-const bounceSound = document.getElementById("bounceSound");
-const gameOverSound = document.getElementById("gameOverSound");
-const bgMusic = document.getElementById("bgMusic");
-const difficultySelect = document.getElementById("difficulty");
-const startGameBtn = document.getElementById("startGameBtn");
-
-let balls = [];
-let score = 0;
-let highScore = localStorage.getItem("highScore") || 0;
-let isGameOver = false;
-let lastAddedBallScore = 0;
-let difficulty = "trungbinh";
-let musicStarted = false;
-
-const difficultySettings = {
-  de: 20,
-  trungbinh: 10,
-  kho: 5,
-  ratkho: 2,
-  thientai: 1,
-};
-
-let paddle = {
-  width: 160,
-  height: 20,
-  x: (canvas.width - 160) / 2,
-  y: canvas.height - 50,
-  dx: 0,
-  speed: 10,
-};
-
-function createBall() {
-  return {
-    x: Math.random() * (canvas.width - 50) + 25,
-    y: canvas.height / 2,
-    radius: 20,
-    dx: (Math.random() > 0.5 ? 1 : -1) * (6 + Math.random() * 3),
-    dy: -6,
-  };
-}
-
-function resetGame() {
-  balls = [createBall()];
-  score = 0;
-  lastAddedBallScore = 0;
-  isGameOver = false;
-  paddle.x = (canvas.width - paddle.width) / 2;
-  updateScore();
-  gameOverDisplay.style.display = "none";
-  restartBtn.style.display = "none";
-  homeBtn.style.display = "none";
-  toggleMusicBtn.style.display = "block";
-  requestAnimationFrame(update);
-}
-
-function updateScore() {
-  if (score > highScore) {
-    highScore = score;
-    localStorage.setItem("highScore", highScore);
-  }
-  scoreDisplay.textContent = `Điểm: ${score} | Kỷ lục: ${highScore}`;
-}
-
-function drawPaddle() {
-  ctx.save();
-  ctx.shadowColor = "#ff00ff";
-  ctx.shadowBlur = 30;
-  ctx.fillStyle = "#ff00ff";
-  ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
-  ctx.restore();
-}
-
-function drawBalls() {
-  balls.forEach(ball => {
-    const gradient = ctx.createRadialGradient(
-      ball.x, ball.y, ball.radius / 3,
-      ball.x, ball.y, ball.radius
-    );
-    gradient.addColorStop(0, "#0ff");
-    gradient.addColorStop(1, "rgba(0,255,255,0)");
-    ctx.fillStyle = gradient;
-    ctx.shadowColor = "#0ff";
-    ctx.shadowBlur = 25;
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-  });
-}
-
-function movePaddle() {
-  paddle.x += paddle.dx;
-  if (paddle.x < 0) paddle.x = 0;
-  if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
-}
-
-function update() {
-  if (isGameOver) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawPaddle();
-  drawBalls();
-  movePaddle();
-
-  balls.forEach(ball => {
-    ball.x += ball.dx;
-    ball.y += ball.dy;
-
-    if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width)
-      ball.dx *= -1;
-    if (ball.y - ball.radius < 0)
-      ball.dy *= -1;
-
-    if (
-      ball.y + ball.radius >= paddle.y &&
-      ball.y + ball.radius <= paddle.y + paddle.height &&
-      ball.x > paddle.x &&
-      ball.x < paddle.x + paddle.width
-    ) {
-      ball.dy = -Math.abs(ball.dy);
-      bounceSound.currentTime = 0;
-      bounceSound.play();
-      score++;
-      updateScore();
-
-      ball.dx *= 1.05;
-      ball.dy *= 1.05;
-
-      const threshold = difficultySettings[difficulty];
-      if (score - lastAddedBallScore >= threshold) {
-        balls.push(createBall());
-        lastAddedBallScore = score;
+  <script>
+    const scenes = {
+      start: {
+        text: "Bạn thức dậy trong một bảo tàng tối tăm. Bốn cánh cửa hiện ra trước mặt bạn, mỗi cửa dẫn đến một thời kỳ lịch sử. Bạn sẽ khám phá căn phòng nào trước?",
+        choices: [
+          { text: "🚪 Cửa Ai Cập cổ đại", next: "egypt" },
+          { text: "🚪 Cửa La Mã cổ đại", next: "rome" },
+          { text: "🚪 Cửa Thế chiến II", next: "ww2" },
+          { text: "🚪 Cửa Thời hiện đại", next: "modern" }
+        ]
+      },
+      egypt: {
+        text: "Bạn bước vào căn phòng phủ đầy cát. Một xác ướp bất ngờ sống dậy và hỏi: 'Ta là Pharaoh nào bị chôn cùng với kho báu lớn nhất?'",
+        choices: [
+          { text: "Tutankhamun", next: "wrong" },
+          { text: "Ramses II", next: "egypt_win" }
+        ]
+      },
+      egypt_win: {
+        text: "Pharaoh mỉm cười và biến mất. Một cánh cửa bí mật mở ra dẫn bạn tới lối đi tiếp theo.",
+        choices: [
+          { text: "Trở lại sảnh chính", next: "start" }
+        ]
+      },
+      rome: {
+        text: "Bạn thấy mình đứng giữa đấu trường Colosseum. Một chiến binh hỏi: 'Ai là hoàng đế đã đưa La Mã đạt cực thịnh?'",
+        choices: [
+          { text: "Nero", next: "wrong" },
+          { text: "Augustus", next: "rome_win" }
+        ]
+      },
+      rome_win: {
+        text: "Chiến binh gật đầu: 'Ngươi hiểu lịch sử. Hãy tiếp tục hành trình.'",
+        choices: [
+          { text: "Quay lại", next: "start" }
+        ]
+      },
+      ww2: {
+        text: "Bạn bước vào căn phòng đầy khói và tiếng còi báo động. Một sĩ quan hỏi: 'Chiến dịch Normandy diễn ra năm nào?'",
+        choices: [
+          { text: "1942", next: "wrong" },
+          { text: "1944", next: "ww2_win" }
+        ]
+      },
+      ww2_win: {
+        text: "Sĩ quan giơ tay chào bạn và chỉ ra một bản đồ bí mật thời chiến. Bạn nhận được một mảnh bản đồ.",
+        choices: [
+          { text: "Trở lại sảnh chính", next: "start" }
+        ]
+      },
+      modern: {
+        text: "Bạn bước vào phòng công nghệ, một AI hỏi bạn: 'Ai là người phát minh ra World Wide Web?'",
+        choices: [
+          { text: "Tim Berners-Lee", next: "modern_win" },
+          { text: "Bill Gates", next: "wrong" }
+        ]
+      },
+      modern_win: {
+        text: "AI phát sáng xanh: 'Chính xác. Bạn xứng đáng với tri thức tương lai.'",
+        choices: [
+          { text: "Quay lại", next: "start" }
+        ]
+      },
+      wrong: {
+        text: "Một cánh cửa sập lại. Sai rồi! Nhưng bạn được cho một cơ hội khác.",
+        choices: [
+          { text: "Quay lại sảnh chính", next: "start" }
+        ]
       }
+    };
+
+    let current = 'start';
+
+    function render(sceneId) {
+      const scene = scenes[sceneId];
+      current = sceneId;
+      document.getElementById("scene").textContent = scene.text;
+      const choicesDiv = document.getElementById("choices");
+      choicesDiv.innerHTML = "";
+
+      scene.choices.forEach(choice => {
+        const btn = document.createElement("button");
+        btn.className = "choice";
+        btn.textContent = choice.text;
+        btn.onclick = () => render(choice.next);
+        choicesDiv.appendChild(btn);
+      });
     }
 
-    if (ball.y - ball.radius > canvas.height) {
-      triggerGameOver();
-    }
-  });
-
-  requestAnimationFrame(update);
-}
-
-function triggerGameOver() {
-  isGameOver = true;
-  gameOverDisplay.style.display = "block";
-  restartBtn.style.display = "inline-block";
-  homeBtn.style.display = "inline-block";
-  toggleMusicBtn.style.display = "none";
-  gameOverSound.play();
-}
-
-document.addEventListener("keydown", e => {
-  if (e.code === "ArrowLeft") paddle.dx = -paddle.speed;
-  else if (e.code === "ArrowRight") paddle.dx = paddle.speed;
-});
-document.addEventListener("keyup", e => {
-  if (["ArrowLeft", "ArrowRight"].includes(e.code)) paddle.dx = 0;
-});
-
-toggleMusicBtn.addEventListener("click", () => {
-  if (!musicStarted) {
-    bgMusic.volume = 0.3;
-    bgMusic.play();
-    musicStarted = true;
-    toggleMusicBtn.textContent = "🔊";
-  } else if (bgMusic.paused) {
-    bgMusic.play();
-    toggleMusicBtn.textContent = "🔊";
-  } else {
-    bgMusic.pause();
-    toggleMusicBtn.textContent = "🔈";
-  }
-});
-
-startGameBtn.addEventListener("click", () => {
-  difficulty = difficultySelect.value;
-  document.getElementById("difficultySelect").style.display = "none";
-  scoreDisplay.style.display = "block";
-  resetGame();
-});
-
-restartBtn.addEventListener("click", () => {
-  resetGame();
-  gameOverDisplay.style.display = "none";
-});
-
-homeBtn.addEventListener("click", () => {
-  isGameOver = false;
-  balls = [];
-  score = 0;
-  lastAddedBallScore = 0;
-  scoreDisplay.style.display = "none";
-  gameOverDisplay.style.display = "none";
-  document.getElementById("difficultySelect").style.display = "block";
-  toggleMusicBtn.style.display = "none";
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-});
-</script>
+    render(current);
+  </script>
 
 </body>
 </html>
