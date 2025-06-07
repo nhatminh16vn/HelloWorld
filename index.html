@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Game: Tránh chướng ngại vật</title>
+  <title>Game: Về đích an toàn</title>
   <style>
     body {
       margin: 0;
@@ -34,6 +34,16 @@
       position: absolute;
     }
 
+    #goal {
+      width: 60px;
+      height: 60px;
+      background-color: limegreen;
+      position: absolute;
+      top: 400px;
+      left: 900px;
+      border-radius: 10px;
+    }
+
     #message {
       position: absolute;
       top: 50%;
@@ -42,6 +52,16 @@
       font-size: 36px;
       color: red;
       display: none;
+    }
+
+    #timer {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 24px;
+      background: rgba(255,255,255,0.8);
+      padding: 5px 10px;
+      border-radius: 6px;
     }
   </style>
 </head>
@@ -52,18 +72,40 @@
     <div class="obstacle" style="top: 200px; left: 300px;"></div>
     <div class="obstacle" style="top: 400px; left: 600px;"></div>
     <div class="obstacle" style="top: 150px; left: 800px;"></div>
-    <div id="message">💥 Game Over!</div>
+    <div id="goal"></div>
+    <div id="message"></div>
+    <div id="timer">⏱️ Thời gian: 30s</div>
   </div>
 
   <script>
     const player = document.getElementById("player");
     const obstacles = document.querySelectorAll(".obstacle");
+    const goal = document.getElementById("goal");
     const message = document.getElementById("message");
+    const timerDisplay = document.getElementById("timer");
 
     let posX = 100;
     let posY = 100;
     const step = 10;
     const size = 50;
+    let timeLeft = 30;
+    let gameOver = false;
+
+    const timer = setInterval(() => {
+      if (timeLeft <= 0) {
+        endGame("⏰ Hết giờ! Thua rồi.");
+        clearInterval(timer);
+      } else {
+        timeLeft--;
+        timerDisplay.innerText = `⏱️ Thời gian: ${timeLeft}s`;
+      }
+    }, 1000);
+
+    function endGame(text) {
+      message.innerText = text;
+      message.style.display = "block";
+      gameOver = true;
+    }
 
     function checkCollision(x, y) {
       const playerRect = {
@@ -94,7 +136,27 @@
       return false;
     }
 
+    function checkGoal(x, y) {
+      const playerRect = {
+        left: x,
+        right: x + size,
+        top: y,
+        bottom: y + size
+      };
+
+      const goalRect = goal.getBoundingClientRect();
+
+      return (
+        playerRect.left < goalRect.right &&
+        playerRect.right > goalRect.left &&
+        playerRect.top < goalRect.bottom &&
+        playerRect.bottom > goalRect.top
+      );
+    }
+
     document.addEventListener("keydown", (event) => {
+      if (gameOver) return;
+
       let newX = posX;
       let newY = posY;
 
@@ -113,13 +175,15 @@
           break;
       }
 
-      // tạm di chuyển để kiểm tra va chạm
       player.style.top = newY + "px";
       player.style.left = newX + "px";
 
       if (checkCollision(newX, newY)) {
-        message.style.display = "block";
-        document.removeEventListener("keydown", arguments.callee); // dừng game
+        clearInterval(timer);
+        endGame("💥 Bạn đã va chạm! Thua rồi.");
+      } else if (checkGoal(newX, newY)) {
+        clearInterval(timer);
+        endGame("🎉 Chúc mừng! Bạn đã đến đích.");
       } else {
         posX = newX;
         posY = newY;
