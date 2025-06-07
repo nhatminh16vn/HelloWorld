@@ -2,50 +2,130 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Game Đoán Số</title>
+  <title>Game: Tránh chướng ngại vật</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin-top: 50px;
+      margin: 0;
+      overflow: hidden;
+      background-color: #f0f0f0;
+      font-family: sans-serif;
     }
-    input, button {
-      padding: 10px;
-      font-size: 16px;
-      margin: 10px;
+
+    #gameArea {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      background-color: #e0f7fa;
     }
-    #result {
-      font-size: 18px;
-      color: blue;
-      margin-top: 20px;
+
+    #player {
+      width: 50px;
+      height: 50px;
+      background-color: red;
+      position: absolute;
+      top: 100px;
+      left: 100px;
+    }
+
+    .obstacle {
+      width: 100px;
+      height: 100px;
+      background-color: black;
+      position: absolute;
+    }
+
+    #message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 36px;
+      color: red;
+      display: none;
     }
   </style>
 </head>
 <body>
-  <h1>🎯 Game Đoán Số 🎯</h1>
-  <p>Máy tính đã chọn 1 số từ 1 đến 100. Bạn có thể đoán đúng không?</p>
-  <input type="number" id="guessInput" placeholder="Nhập số bạn đoán (1-100)">
-  <button onclick="checkGuess()">Đoán</button>
-  <div id="result"></div>
+
+  <div id="gameArea">
+    <div id="player"></div>
+    <div class="obstacle" style="top: 200px; left: 300px;"></div>
+    <div class="obstacle" style="top: 400px; left: 600px;"></div>
+    <div class="obstacle" style="top: 150px; left: 800px;"></div>
+    <div id="message">💥 Game Over!</div>
+  </div>
 
   <script>
-    let secretNumber = Math.floor(Math.random() * 100) + 1;
-    let attempts = 0;
+    const player = document.getElementById("player");
+    const obstacles = document.querySelectorAll(".obstacle");
+    const message = document.getElementById("message");
 
-    function checkGuess() {
-      const guess = Number(document.getElementById('guessInput').value);
-      attempts++;
+    let posX = 100;
+    let posY = 100;
+    const step = 10;
+    const size = 50;
 
-      if (guess < 1 || guess > 100) {
-        document.getElementById('result').textContent = "Vui lòng nhập số từ 1 đến 100!";
-      } else if (guess < secretNumber) {
-        document.getElementById('result').textContent = "Số bạn đoán quá nhỏ!";
-      } else if (guess > secretNumber) {
-        document.getElementById('result').textContent = "Số bạn đoán quá lớn!";
-      } else {
-        document.getElementById('result').textContent = `🎉 Chính xác! Bạn đã đoán đúng sau ${attempts} lần.`;
+    function checkCollision(x, y) {
+      const playerRect = {
+        left: x,
+        right: x + size,
+        top: y,
+        bottom: y + size
+      };
+
+      for (let obs of obstacles) {
+        const rect = obs.getBoundingClientRect();
+        const obsRect = {
+          left: rect.left,
+          right: rect.left + rect.width,
+          top: rect.top,
+          bottom: rect.top + rect.height
+        };
+
+        if (
+          playerRect.left < obsRect.right &&
+          playerRect.right > obsRect.left &&
+          playerRect.top < obsRect.bottom &&
+          playerRect.bottom > obsRect.top
+        ) {
+          return true;
+        }
       }
+      return false;
     }
+
+    document.addEventListener("keydown", (event) => {
+      let newX = posX;
+      let newY = posY;
+
+      switch(event.key) {
+        case "ArrowUp":
+          newY = Math.max(0, posY - step);
+          break;
+        case "ArrowDown":
+          newY = Math.min(window.innerHeight - size, posY + step);
+          break;
+        case "ArrowLeft":
+          newX = Math.max(0, posX - step);
+          break;
+        case "ArrowRight":
+          newX = Math.min(window.innerWidth - size, posX + step);
+          break;
+      }
+
+      // tạm di chuyển để kiểm tra va chạm
+      player.style.top = newY + "px";
+      player.style.left = newX + "px";
+
+      if (checkCollision(newX, newY)) {
+        message.style.display = "block";
+        document.removeEventListener("keydown", arguments.callee); // dừng game
+      } else {
+        posX = newX;
+        posY = newY;
+      }
+    });
   </script>
+
 </body>
 </html>
