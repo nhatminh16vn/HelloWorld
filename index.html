@@ -1,94 +1,118 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Game 30 màn chơi</title>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: sans-serif;
-    }
-
-    #gameArea {
-      width: 100vw;
-      height: 100vh;
-      position: relative;
-      background-color: #e0f7fa;
-    }
-
-    #player {
-      width: 50px;
-      height: 50px;
-      background-color: red;
-      position: absolute;
-    }
-
-    .obstacle {
-      width: 100px;
-      height: 100px;
-      background-color: black;
-      position: absolute;
-    }
-
-    #goal {
-      width: 60px;
-      height: 60px;
-      background-color: limegreen;
-      position: absolute;
-      border-radius: 10px;
-    }
-
-    #message, #levelDisplay, #timer {
-      position: absolute;
-      font-size: 24px;
-      padding: 5px 10px;
-      background: rgba(255,255,255,0.8);
-      border-radius: 8px;
-    }
-
-    #message {
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 36px;
-      color: red;
-      display: none;
-    }
-
-    #levelDisplay {
-      top: 20px;
-      right: 20px;
-    }
-
-    #timer {
-      top: 20px;
-      left: 20px;
-    }
-    .boss {
-  width: 150px;
-  height: 150px;
-  background-color: darkred;
-  position: absolute;
-  border: 4px solid black;
-  animation: moveBoss 2s infinite alternate ease-in-out;
-}
-
-@keyframes moveBoss {
-  from { transform: translateX(0); }
-  to { transform: translateX(300px); }
-}
-
-  </style>
+<meta charset="UTF-8" />
+<title>Game Hardcore x999999</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+  }
+  #gameArea {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  #player {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #ff416c, #ff4b2b);
+    border-radius: 12px;
+    position: absolute;
+    box-shadow: 0 0 15px #ff416c;
+    transition: box-shadow 0.2s ease;
+  }
+  #player.hit {
+    animation: flashRed 0.3s;
+  }
+  @keyframes flashRed {
+    0%,100% { box-shadow: 0 0 15px #ff416c; background: linear-gradient(135deg, #ff416c, #ff4b2b); }
+    50% { box-shadow: 0 0 25px #ff0000; background: #ff0000; }
+  }
+  .obstacle {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(45deg, #434343, #000000);
+    position: absolute;
+    border-radius: 10px;
+    box-shadow: inset 0 0 15px #000000;
+  }
+  #goal {
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle, #00ff6a, #00802b);
+    position: absolute;
+    border-radius: 15px;
+    box-shadow: 0 0 15px #00ff6a;
+    filter: drop-shadow(0 0 8px #00ff6a);
+  }
+  #message, #levelDisplay, #timer, #highScoreDisplay {
+    position: absolute;
+    font-size: 24px;
+    padding: 6px 12px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 12px;
+    user-select: none;
+  }
+  #message {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 40px;
+    color: #ff4b2b;
+    display: none;
+    text-shadow: 0 0 10px #ff4b2b;
+  }
+  #levelDisplay {
+    top: 10px;
+    right: 10px;
+  }
+  #timer {
+    top: 10px;
+    left: 10px;
+  }
+  #highScoreDisplay {
+    top: 50px;
+    right: 10px;
+  }
+  /* Boss style */
+  .boss {
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, #800000, #400000);
+    position: absolute;
+    border-radius: 20px;
+    border: 5px solid #ff0000;
+    box-shadow: 0 0 20px #ff0000;
+    animation: bossMove 2s infinite alternate ease-in-out;
+  }
+  @keyframes bossMove {
+    from { transform: translateX(0); }
+    to { transform: translateX(350px); }
+  }
+  /* Bullet style */
+  .bullet {
+    width: 15px;
+    height: 15px;
+    background: radial-gradient(circle, #ffff00, #ff9900);
+    border-radius: 50%;
+    position: absolute;
+    box-shadow: 0 0 12px #ffff00;
+  }
+</style>
 </head>
 <body>
-
   <div id="gameArea">
     <div id="player"></div>
     <div id="goal"></div>
     <div id="message"></div>
     <div id="levelDisplay">Level: 1</div>
     <div id="timer">⏱️ 30s</div>
+    <div id="highScoreDisplay">🏅 Kỷ lục: 1</div>
   </div>
 
   <script>
@@ -98,17 +122,20 @@
     const message = document.getElementById("message");
     const levelDisplay = document.getElementById("levelDisplay");
     const timerDisplay = document.getElementById("timer");
+    const highScoreDisplay = document.getElementById("highScoreDisplay");
 
-    let posX = 0;
-    let posY = 0;
     const playerSize = 50;
+    let posX = 0, posY = 0;
     let obstacles = [];
+    let bullets = [];
     let level = 1;
-    let maxLevels = 30;
+    const maxLevels = 30;
     let step = 10;
     let timeLeft = 30;
     let timer;
     let gameOver = false;
+    let highScore = localStorage.getItem("highScore") || 1;
+    highScoreDisplay.innerText = `🏅 Kỷ lục: ${highScore}`;
 
     function getRandom(min, max) {
       return Math.floor(Math.random() * (max - min)) + min;
@@ -128,42 +155,11 @@
       obstacles = [];
     }
 
-function isOverlapping(x, y, width, height, existingElements) {
-  const rect1 = {
-    left: x,
-    right: x + width,
-    top: y,
-    bottom: y + height
-  let tries = 0;
-do {
-  posX = getRandom(0, window.innerWidth - playerSize);
-  posY = getRandom(0, window.innerHeight - playerSize);
-  tries++;
-} while (isOverlapping(posX, posY, playerSize, playerSize, obstacles) && tries < 50);
-player.style.left = posX + "px";
-player.style.top = posY + "px";
-tries = 0;
-let goalX, goalY;
-do {
-  goalX = getRandom(0, window.innerWidth - 60);
-  goalY = getRandom(0, window.innerHeight - 60);
-  tries++;
-} while (isOverlapping(goalX, goalY, 60, 60, obstacles) && tries < 50);
-goal.style.left = goalX + "px";
-goal.style.top = goalY + "px";
-}
-
-  for (const el of existingElements) {
-    const rect2 = el.getBoundingClientRect();
-    if (!(rect1.right < rect2.left || rect1.left > rect2.right ||
-          rect1.bottom < rect2.top || rect1.top > rect2.bottom)) {
-      return true;
+    function clearBullets() {
+      bullets.forEach(b => b.remove());
+      bullets = [];
     }
-  }
-  return false;
-}
 
-    
     function checkCollision(rect1, rect2) {
       return !(
         rect1.right < rect2.left ||
@@ -173,63 +169,154 @@ goal.style.top = goalY + "px";
       );
     }
 
-function startLevel() {
-  clearObstacles();
-  gameOver = false;
-  step = 10 + level;
-  timeLeft = 30;
-
-  posX = getRandom(0, window.innerWidth - playerSize);
-  posY = getRandom(0, window.innerHeight - playerSize);
-  player.style.left = posX + "px";
-  player.style.top = posY + "px";
-
-  // Mục tiêu
-  const goalX = getRandom(100, window.innerWidth - 100);
-  const goalY = getRandom(100, window.innerHeight - 100);
-  goal.style.left = goalX + "px";
-  goal.style.top = goalY + "px";
-
-  // Boss level đặc biệt
-  if ([10, 20, 30].includes(level)) {
-    const boss = document.createElement("div");
-    boss.classList.add("boss");
-    boss.style.top = getRandom(100, window.innerHeight - 200) + "px";
-    boss.style.left = getRandom(100, window.innerWidth - 400) + "px";
-    gameArea.appendChild(boss);
-    obstacles.push(boss);
-  } else {
-    // Obstacle thường
-    const obstacleCount = Math.min(5 + level, 30);
-    for (let i = 0; i < obstacleCount; i++) {
-      const ox = getRandom(0, window.innerWidth - 100);
-      const oy = getRandom(0, window.innerHeight - 100);
-      createObstacle(ox, oy);
+    function isOverlapping(x, y, width, height, existingElements) {
+      const rect1 = {
+        left: x,
+        right: x + width,
+        top: y,
+        bottom: y + height
+      };
+      for (const el of existingElements) {
+        const rect2 = el.getBoundingClientRect();
+        if (!(rect1.right < rect2.left || rect1.left > rect2.right ||
+              rect1.bottom < rect2.top || rect1.top > rect2.bottom)) {
+          return true;
+        }
+      }
+      return false;
     }
-  }
 
-  levelDisplay.innerText = `Level: ${level}`;
-  message.style.display = "none";
-  timerDisplay.innerText = `⏱️ ${timeLeft}s`;
+    function spawnPlayer() {
+      let tries = 0;
+      do {
+        posX = getRandom(0, window.innerWidth - playerSize);
+        posY = getRandom(0, window.innerHeight - playerSize);
+        tries++;
+      } while (isOverlapping(posX, posY, playerSize, playerSize, obstacles) && tries < 50);
+      player.style.left = posX + "px";
+      player.style.top = posY + "px";
+    }
 
-  clearInterval(timer);
-  timer = setInterval(() => {
-    if (gameOver) return;
-    timeLeft--;
-    if (timeLeft <= 0) {
-      endGame("⏰ Hết giờ! Thua rồi.");
-    } else {
+    function spawnGoal() {
+      let tries = 0;
+      let goalX, goalY;
+      do {
+        goalX = getRandom(0, window.innerWidth - 60);
+        goalY = getRandom(0, window.innerHeight - 60);
+        tries++;
+      } while (isOverlapping(goalX, goalY, 60, 60, obstacles) && tries < 50);
+      goal.style.left = goalX + "px";
+      goal.style.top = goalY + "px";
+    }
+
+    let boss = null;
+    let bossDirection = 1;
+    let bossSpeed = 2;
+
+    // Tạo đạn bắn từ boss
+    function createBullet(x, y, dx, dy) {
+      const bullet = document.createElement("div");
+      bullet.classList.add("bullet");
+      bullet.style.left = x + "px";
+      bullet.style.top = y + "px";
+      gameArea.appendChild(bullet);
+      bullets.push({el: bullet, dx, dy});
+    }
+
+    function moveBullets() {
+      bullets.forEach((b, i) => {
+        let left = parseFloat(b.el.style.left);
+        let top = parseFloat(b.el.style.top);
+        left += b.dx;
+        top += b.dy;
+        b.el.style.left = left + "px";
+        b.el.style.top = top + "px";
+
+        // Nếu ra ngoài màn thì xóa
+        if (left < 0 || left > window.innerWidth || top < 0 || top > window.innerHeight) {
+          b.el.remove();
+          bullets.splice(i, 1);
+        }
+
+        // Va chạm với player
+        const playerRect = player.getBoundingClientRect();
+        const bulletRect = b.el.getBoundingClientRect();
+        if (checkCollision(playerRect, bulletRect)) {
+          endGame("💥 Bạn bị trúng đạn! Thua rồi.");
+          player.classList.add("hit");
+          setTimeout(() => player.classList.remove("hit"), 300);
+        }
+      });
+    }
+
+    function startLevel() {
+      clearObstacles();
+      clearBullets();
+      if (boss) {
+        boss.remove();
+        boss = null;
+      }
+      gameOver = false;
+      step = 10 + level * 0.8; // Tăng tốc dần
+      timeLeft = 30 - Math.floor(level / 10) * 5; // Cứ 10 level giảm 5 giây
+      if (timeLeft < 10) timeLeft = 10;
+
+      // Tạo chướng ngại vật
+      if ([10, 20, 30].includes(level)) {
+        // Boss level
+        boss = document.createElement("div");
+        boss.classList.add("boss");
+        boss.style.top = getRandom(100, window.innerHeight - 200) + "px";
+        boss.style.left = getRandom(100, window.innerWidth - 400) + "px";
+        gameArea.appendChild(boss);
+        obstacles.push(boss);
+      } else {
+        // Tạo chướng ngại vật nhiều và khó hơn
+        const obstacleCount = Math.min(5 + level * 1.5, 40);
+        for (let i = 0; i < obstacleCount; i++) {
+          let ox, oy, tries = 0;
+          do {
+            ox = getRandom(0, window.innerWidth - 100);
+            oy = getRandom(0, window.innerHeight - 100);
+            tries++;
+          } while (isOverlapping(ox, oy, 100, 100, obstacles) && tries < 50);
+          createObstacle(ox, oy);
+        }
+      }
+
+      spawnPlayer();
+      spawnGoal();
+
+      levelDisplay.innerText = `Level: ${level}`;
+      message.style.display = "none";
       timerDisplay.innerText = `⏱️ ${timeLeft}s`;
-    }
-  }, 1000);
-}
 
+      clearInterval(timer);
+      timer = setInterval(() => {
+        if (gameOver) return;
+        timeLeft--;
+        if (timeLeft <= 0) {
+          endGame("⏰ Hết giờ! Thua rồi.");
+        } else {
+          timerDisplay.innerText = `⏱️ ${timeLeft}s`;
+        }
+      }, 1000);
+    }
 
     function endGame(text) {
+      if (gameOver) return;
       message.innerText = text;
       message.style.display = "block";
       gameOver = true;
       clearInterval(timer);
+
+      // Cập nhật high score
+      if (level > highScore) {
+        highScore = level;
+        localStorage.setItem("highScore", highScore);
+        highScoreDisplay.innerText = `🏅 Kỷ lục: ${highScore}`;
+        message.innerText += " 🎉 Kỷ lục mới!";
+      }
     }
 
     function nextLevel() {
@@ -254,19 +341,22 @@ function startLevel() {
         case "ArrowRight": newX += step; break;
       }
 
-      // Giới hạn không ra ngoài màn hình
+      // Giới hạn ra ngoài màn hình
       newX = Math.max(0, Math.min(newX, window.innerWidth - playerSize));
       newY = Math.max(0, Math.min(newY, window.innerHeight - playerSize));
 
       player.style.left = newX + "px";
       player.style.top = newY + "px";
 
-      // Kiểm tra va chạm chướng ngại vật
       const playerRect = player.getBoundingClientRect();
+
+      // Kiểm tra va chạm với chướng ngại vật
       for (let obs of obstacles) {
         const obsRect = obs.getBoundingClientRect();
         if (checkCollision(playerRect, obsRect)) {
           endGame("💥 Bạn đã va chạm! Thua rồi.");
+          player.classList.add("hit");
+          setTimeout(() => player.classList.remove("hit"), 300);
           return;
         }
       }
@@ -281,9 +371,49 @@ function startLevel() {
       posY = newY;
     });
 
-    // Bắt đầu game
-    startLevel();
-  </script>
+    // Điều khiển boss di chuyển và bắn đạn
+    function bossActions() {
+      if (!boss) return;
 
+      let left = parseFloat(boss.style.left);
+      left += bossSpeed * bossDirection;
+
+      // Đổi chiều khi chạm cạnh
+      if (left < 0 || left > window.innerWidth - 150) {
+        bossDirection *= -1;
+      } else {
+        boss.style.left = left + "px";
+      }
+
+      // Bắn đạn ngẫu nhiên với xác suất tăng dần theo level
+      if (Math.random() < 0.03 + level * 0.002) {
+        // Bắn đạn từ boss đến player
+        const bossRect = boss.getBoundingClientRect();
+        const playerRect = player.getBoundingClientRect();
+        const startX = bossRect.left + bossRect.width / 2;
+        const startY = bossRect.top + bossRect.height / 2;
+        const dirX = playerRect.left + playerRect.width / 2 - startX;
+        const dirY = playerRect.top + playerRect.height / 2 - startY;
+        const length = Math.sqrt(dirX * dirX + dirY * dirY);
+        const bulletSpeed = 6 + level * 0.2;
+        const dx = (dirX / length) * bulletSpeed;
+        const dy = (dirY / length) * bulletSpeed;
+        createBullet(startX, startY, dx, dy);
+      }
+    }
+
+    // Vòng lặp game chính
+    function gameLoop() {
+      if (!gameOver) {
+        bossActions();
+        moveBullets();
+      }
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Bắt đầu game lần đầu
+    startLevel();
+    gameLoop();
+  </script>
 </body>
 </html>
