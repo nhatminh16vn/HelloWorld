@@ -6,47 +6,70 @@
 <title>Game Đuổi Bắt</title>
 <style>
   body {
-    margin: 0; background: #111; color: #eee; font-family: Arial, sans-serif;
+    margin: 0; background: #111; color: #eee; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;
+    user-select: none;
   }
   #gameCanvas {
-    background: #222;
-    border: 2px solid #555;
+    background: linear-gradient(135deg, #1f1f3a, #111122);
+    border: 3px solid #44aaff;
+    box-shadow: 0 0 20px #44aaffaa;
     display: block;
+    border-radius: 12px;
   }
   #info {
-    margin-top: 10px;
-    font-size: 20px;
+    margin-top: 15px;
+    font-size: 22px;
+    letter-spacing: 1.2px;
+    text-align: center;
+  }
+  #info span {
+    font-weight: bold;
+    color: #44aaff;
   }
 </style>
 </head>
 <body>
+
 <canvas id="gameCanvas" width="600" height="400"></canvas>
-<div id="info">Thời gian sống sót: <span id="timer">0.0</span> giây</div>
+<div id="info">
+  Thời gian sống sót: <span id="timer">0.0</span> giây<br/>
+  Điểm cao nhất: <span id="highscore">0.0</span> giây
+</div>
 
 <script>
+// Lấy canvas và context
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// Đối tượng người chơi
 const player = {
   x: 50,
   y: 50,
   size: 30,
   speed: 5,
   color: 'cyan',
+  shadowColor: 'rgba(0,255,255,0.6)',
 };
 
+// Đối tượng kẻ đuổi
 const chaser = {
   x: 500,
   y: 300,
   size: 30,
+  baseSpeed: 2.5,
   speed: 2.5,
   color: 'red',
+  shadowColor: 'rgba(255,0,0,0.6)',
 };
 
 let keys = {};
 let startTime = null;
 let gameOver = false;
+let highScore = parseFloat(localStorage.getItem('chaseHighScore')) || 0;
+
+// Cập nhật hiển thị điểm cao nhất
+document.getElementById('highscore').textContent = highScore.toFixed(1);
 
 window.addEventListener('keydown', e => {
   keys[e.key.toLowerCase()] = true;
@@ -55,6 +78,11 @@ window.addEventListener('keyup', e => {
   keys[e.key.toLowerCase()] = false;
 });
 
+// Tạo âm thanh khi bị bắt
+const caughtSound = new Audio();
+caughtSound.src = 'https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg'; // âm thanh miễn phí, bạn có thể đổi link khác
+caughtSound.volume = 0.5;
+
 function movePlayer() {
   if (keys['w'] || keys['arrowup']) player.y -= player.speed;
   if (keys['s'] || keys['arrowdown']) player.y += player.speed;
@@ -62,13 +90,15 @@ function movePlayer() {
   if (keys['d'] || keys['arrowright']) player.x += player.speed;
   
   // Giới hạn trong canvas
-  if (player.x < 0) player.x = 0;
-  if (player.y < 0) player.y = 0;
-  if (player.x > canvas.width - player.size) player.x = canvas.width - player.size;
-  if (player.y > canvas.height - player.size) player.y = canvas.height - player.size;
+  player.x = Math.max(0, Math.min(player.x, canvas.width - player.size));
+  player.y = Math.max(0, Math.min(player.y, canvas.height - player.size));
 }
 
 function moveChaser() {
+  // Tăng tốc theo thời gian sống sót
+  let elapsed = (Date.now() - startTime) / 1000;
+  chaser.speed = chaser.baseSpeed + elapsed * 0.1; // Tăng 0.1 speed mỗi giây
+  
   // Hướng về phía player
   let dx = player.x - chaser.x;
   let dy = player.y - chaser.y;
@@ -90,18 +120,26 @@ function updateTimer() {
   if (!startTime) startTime = Date.now();
   let elapsed = (Date.now() - startTime) / 1000;
   document.getElementById('timer').textContent = elapsed.toFixed(1);
+  return elapsed;
 }
 
-function drawRect(obj) {
+function drawRectWithShadow(obj) {
+  ctx.shadowColor = obj.shadowColor;
+  ctx.shadowBlur = 15;
   ctx.fillStyle = obj.color;
   ctx.fillRect(obj.x, obj.y, obj.size, obj.size);
+  ctx.shadowBlur = 0; // reset shadow
 }
 
 function gameLoop() {
   if (gameOver) {
-    ctx.fillStyle = 'white';
-    ctx.font = '40px Arial';
-    ctx.fillText('Bạn đã bị bắt!', canvas.width / 2 - 120, canvas.height / 2);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#44aaff';
+    ctx.font = '48px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Bạn đã bị bắt!', canvas.width / 2, canvas.height / 2 - 20);
+    ctx.font = '24px Arial';
+    ctx.fillText('Nhấn F5 để chơi lại', canvas.width / 2, canvas.height / 2 + 20);
     return;
   }
   
@@ -109,18 +147,29 @@ function gameLoop() {
   
   movePlayer();
   moveChaser();
-  drawRect(player);
-  drawRect(chaser);
+  
+  drawRectWithShadow(player);
+  drawRectWithShadow(chaser);
   
   if (checkCollision()) {
     gameOver = true;
+    caughtSound.play();
+    // Cập nhật điểm cao nhất nếu cần
+    let finalTime = updateTimer();
+    if (finalTime > highScore) {
+      highScore = finalTime;
+      localStorage.setItem('chaseHighScore', highScore.toFixed(1));
+      document.getElementById('highscore').textContent = highScore.toFixed(1);
+    }
   } else {
-    updateTimer();
+    let elapsed = updateTimer();
+    // Cập nhật tốc độ dựa vào thời gian bên trên trong moveChaser
     requestAnimationFrame(gameLoop);
   }
 }
 
 gameLoop();
 </script>
+
 </body>
 </html>
