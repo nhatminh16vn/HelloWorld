@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <title>Bóng Nảy Neon Cyberpunk - Có Chọn Độ Khó & 2 Nút Game Over</title>
+
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
   html, body {
     margin: 0; padding: 0; height: 100%;
     background: linear-gradient(270deg, #0f0c29, #302b63, #24243e);
     background-size: 600% 600%;
     animation: gradientBG 15s ease infinite;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     overflow: hidden;
     color: #0ff;
   }
@@ -42,10 +43,12 @@
     left: 50%;
     transform: translateX(-50%);
     font-size: 36px;
+    font-weight: 700;
+    font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #0ff;
     text-shadow:
-      0 0 8px #0ff,
-      0 0 25px #0ff,
-      0 0 40px #0ff;
+      0 0 5px #0ff,
+      0 0 10px #0ff;
     user-select: none;
     z-index: 10;
   }
@@ -284,38 +287,48 @@ function drawBalls() {
   });
 }
 
-function movePaddle() {
-  paddle.x += paddle.dx;
-  if (paddle.x < 0) paddle.x = 0;
-  if (paddle.x + paddle.width > canvas.width)
-    paddle.x = canvas.width - paddle.width;
-}
-
 function update() {
   if (isGameOver) return;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawPaddle();
-  drawBalls();
-  movePaddle();
 
-  balls.forEach((ball, index) => {
+  // Di chuyển paddle
+  paddle.x += paddle.dx;
+  if (paddle.x < 0) paddle.x = 0;
+  if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+
+  drawPaddle();
+
+  balls.forEach(ball => {
     ball.x += ball.dx;
     ball.y += ball.dy;
 
-    if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width)
+    // Va chạm với tường trái/phải
+    if (ball.x + ball.radius > canvas.width) {
+      ball.x = canvas.width - ball.radius;
       ball.dx = -ball.dx;
-    if (ball.y - ball.radius < 0)
+    } else if (ball.x - ball.radius < 0) {
+      ball.x = ball.radius;
+      ball.dx = -ball.dx;
+    }
+
+    // Va chạm với trần
+    if (ball.y - ball.radius < 0) {
+      ball.y = ball.radius;
       ball.dy = -ball.dy;
+    }
 
     // Va chạm với paddle
     if (
       ball.y + ball.radius >= paddle.y &&
       ball.y + ball.radius <= paddle.y + paddle.height &&
       ball.x > paddle.x &&
-      ball.x < paddle.x + paddle.width
+      ball.x < paddle.x + paddle.width &&
+      ball.dy > 0
     ) {
+      ball.y = paddle.y - ball.radius;  // Tránh bị dính bóng
       ball.dy = -Math.abs(ball.dy);
+      bounceSound.currentTime = 0;
       bounceSound.play();
 
       // Tăng điểm + cập nhật điểm
@@ -349,6 +362,7 @@ function gameOver() {
   restartBtn.style.display = 'inline-block';
   homeBtn.style.display = 'inline-block';
   toggleMusicBtn.style.display = 'none';
+  gameOverSound.currentTime = 0;
   gameOverSound.play();
 }
 
@@ -386,7 +400,7 @@ toggleMusicBtn.addEventListener('click', () => {
 // Bắt đầu game từ menu chọn độ khó
 startGameBtn.addEventListener('click', () => {
   difficulty = difficultySelect.value;
-  document.getElementById('difficultySelect').style.display = 'none';
+  difficultySelect.style.display = 'none';
   scoreDisplay.style.display = 'block';
   resetGame();
 });
@@ -412,10 +426,9 @@ homeBtn.addEventListener('click', () => {
   restartBtn.style.display = 'none';
   homeBtn.style.display = 'none';
   toggleMusicBtn.style.display = 'none';
-  document.getElementById('difficultySelect').style.display = 'block';
+  difficultySelect.style.display = 'block';
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 });
-
 </script>
 
 </body>
