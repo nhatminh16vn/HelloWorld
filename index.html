@@ -2,131 +2,113 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Bí Ẩn Bảo Tàng Thế Giới</title>
+  <title>Tranh Sống - Bảo Tàng Bí Ẩn</title>
   <style>
     body {
       background-color: #111;
       color: #eee;
       font-family: 'Georgia', serif;
-      max-width: 700px;
-      margin: auto;
+      text-align: center;
       padding: 20px;
     }
-    .scene-text {
-      margin-bottom: 20px;
-      font-size: 18px;
+    h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
     }
-    .choice {
-      display: block;
-      background-color: #444;
-      color: white;
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin: 30px auto;
+      max-width: 800px;
+    }
+    .painting {
+      background-color: #222;
+      border: 2px solid #444;
       padding: 10px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 6px;
+      border-radius: 10px;
       cursor: pointer;
+      transition: transform 0.2s;
     }
-    .choice:hover {
-      background-color: #666;
+    .painting:hover {
+      transform: scale(1.05);
+      background-color: #333;
+    }
+    .painting img {
+      max-width: 100%;
+      border-radius: 6px;
+    }
+    .dialogue {
+      margin-top: 30px;
+      background-color: #222;
+      padding: 20px;
+      border-radius: 12px;
+      display: none;
     }
   </style>
 </head>
 <body>
 
-  <h1>🏛️ Bí Ẩn Bảo Tàng Thế Giới</h1>
-  <div id="scene" class="scene-text"></div>
-  <div id="choices"></div>
+  <h1>🏛️ Bảo Tàng Tranh Sống</h1>
+  <p>Nhấn vào một bức tranh để khám phá điều kỳ lạ...</p>
+
+  <div class="gallery">
+    <div class="painting" onclick="showDialogue(0)">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Legionary_3rd_century.jpg/300px-Legionary_3rd_century.jpg" alt="Chiến binh La Mã">
+      <p>Chiến binh La Mã</p>
+    </div>
+    <div class="painting" onclick="showDialogue(1)">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Tutankhamun_Egyptian_Museum.jpg/300px-Tutankhamun_Egyptian_Museum.jpg" alt="Pharaoh thức dậy">
+      <p>Pharaoh thức dậy</p>
+    </div>
+    <div class="painting" onclick="showDialogue(2)">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Napoleon_Bonaparte2.jpg/300px-Napoleon_Bonaparte2.jpg" alt="Napoleon chỉ huy">
+      <p>Napoleon chỉ huy</p>
+    </div>
+    <div class="painting" onclick="showDialogue(3)">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Einstein_blackboard.jpg/300px-Einstein_blackboard.jpg" alt="Einstein giảng bài">
+      <p>Einstein giảng bài</p>
+    </div>
+    <div class="painting" onclick="showDialogue(4)">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Artificial_Intelligence_%26_AI_%26_Machine_Learning_-_30212411048.jpg/300px-Artificial_Intelligence_%26_AI_%26_Machine_Learning_-_30212411048.jpg" alt="Người tương lai">
+      <p>Người tương lai</p>
+    </div>
+  </div>
+
+  <div id="dialogue" class="dialogue">
+    <h2 id="npc-name"></h2>
+    <p id="npc-line"></p>
+  </div>
 
   <script>
-    const scenes = {
-      start: {
-        text: "Bạn thức dậy trong một bảo tàng tối tăm. Bốn cánh cửa hiện ra trước mặt bạn, mỗi cửa dẫn đến một thời kỳ lịch sử. Bạn sẽ khám phá căn phòng nào trước?",
-        choices: [
-          { text: "🚪 Cửa Ai Cập cổ đại", next: "egypt" },
-          { text: "🚪 Cửa La Mã cổ đại", next: "rome" },
-          { text: "🚪 Cửa Thế chiến II", next: "ww2" },
-          { text: "🚪 Cửa Thời hiện đại", next: "modern" }
-        ]
+    const characters = [
+      {
+        name: "Chiến binh La Mã",
+        line: "Salve, công dân! Ta là Marcus, binh sĩ của Đế chế La Mã. Ngươi có đủ dũng cảm để chiến đấu vì Roma chứ?"
       },
-      egypt: {
-        text: "Bạn bước vào căn phòng phủ đầy cát. Một xác ướp bất ngờ sống dậy và hỏi: 'Ta là Pharaoh nào bị chôn cùng với kho báu lớn nhất?'",
-        choices: [
-          { text: "Tutankhamun", next: "wrong" },
-          { text: "Ramses II", next: "egypt_win" }
-        ]
+      {
+        name: "Pharaoh Ai Cập",
+        line: "Ta là Tutankhamun, vị vua bất tử. Kẻ nào lấy báu vật của ta sẽ chịu lời nguyền muôn kiếp!"
       },
-      egypt_win: {
-        text: "Pharaoh mỉm cười và biến mất. Một cánh cửa bí mật mở ra dẫn bạn tới lối đi tiếp theo.",
-        choices: [
-          { text: "Trở lại sảnh chính", next: "start" }
-        ]
+      {
+        name: "Napoleon Bonaparte",
+        line: "En avant! Hãy đứng lên cùng ta. Chúng ta sẽ viết lại lịch sử châu Âu này!"
       },
-      rome: {
-        text: "Bạn thấy mình đứng giữa đấu trường Colosseum. Một chiến binh hỏi: 'Ai là hoàng đế đã đưa La Mã đạt cực thịnh?'",
-        choices: [
-          { text: "Nero", next: "wrong" },
-          { text: "Augustus", next: "rome_win" }
-        ]
+      {
+        name: "Albert Einstein",
+        line: "E = mc². Nhưng liệu bạn có hiểu trọng lực và thời gian đang uốn cong quanh bạn không?"
       },
-      rome_win: {
-        text: "Chiến binh gật đầu: 'Ngươi hiểu lịch sử. Hãy tiếp tục hành trình.'",
-        choices: [
-          { text: "Quay lại", next: "start" }
-        ]
-      },
-      ww2: {
-        text: "Bạn bước vào căn phòng đầy khói và tiếng còi báo động. Một sĩ quan hỏi: 'Chiến dịch Normandy diễn ra năm nào?'",
-        choices: [
-          { text: "1942", next: "wrong" },
-          { text: "1944", next: "ww2_win" }
-        ]
-      },
-      ww2_win: {
-        text: "Sĩ quan giơ tay chào bạn và chỉ ra một bản đồ bí mật thời chiến. Bạn nhận được một mảnh bản đồ.",
-        choices: [
-          { text: "Trở lại sảnh chính", next: "start" }
-        ]
-      },
-      modern: {
-        text: "Bạn bước vào phòng công nghệ, một AI hỏi bạn: 'Ai là người phát minh ra World Wide Web?'",
-        choices: [
-          { text: "Tim Berners-Lee", next: "modern_win" },
-          { text: "Bill Gates", next: "wrong" }
-        ]
-      },
-      modern_win: {
-        text: "AI phát sáng xanh: 'Chính xác. Bạn xứng đáng với tri thức tương lai.'",
-        choices: [
-          { text: "Quay lại", next: "start" }
-        ]
-      },
-      wrong: {
-        text: "Một cánh cửa sập lại. Sai rồi! Nhưng bạn được cho một cơ hội khác.",
-        choices: [
-          { text: "Quay lại sảnh chính", next: "start" }
-        ]
+      {
+        name: "Người từ Tương Lai",
+        line: "Tôi đến từ năm 3025. Loài người đang đứng trước ngưỡng cửa quyết định: cứu Trái Đất hoặc biến mất mãi mãi."
       }
-    };
+    ];
 
-    let current = 'start';
-
-    function render(sceneId) {
-      const scene = scenes[sceneId];
-      current = sceneId;
-      document.getElementById("scene").textContent = scene.text;
-      const choicesDiv = document.getElementById("choices");
-      choicesDiv.innerHTML = "";
-
-      scene.choices.forEach(choice => {
-        const btn = document.createElement("button");
-        btn.className = "choice";
-        btn.textContent = choice.text;
-        btn.onclick = () => render(choice.next);
-        choicesDiv.appendChild(btn);
-      });
+    function showDialogue(index) {
+      document.getElementById("npc-name").textContent = characters[index].name;
+      document.getElementById("npc-line").textContent = characters[index].line;
+      document.getElementById("dialogue").style.display = "block";
     }
-
-    render(current);
   </script>
 
 </body>
