@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Game Bóng Nảy Cool x999999999</title>
+<title>Game Bóng Nảy Cool Fix</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap');
   body {
@@ -45,8 +45,8 @@
 </style>
 </head>
 <body>
-  <div id="score">Điểm: 0</div>
-  <div id="gameOver">Game Over! Nhấn F5 để chơi lại.</div>
+  <div id="score">Điểm: 0 | Kỷ lục: 0</div>
+  <div id="gameOver">Game Over! Nhấn nút Chơi lại để tiếp tục.</div>
   <canvas id="gameCanvas" width="600" height="450"></canvas>
 
   <!-- Âm thanh -->
@@ -98,7 +98,6 @@
     dy: -5,
     colorStops: ['#00fff0', '#00b8a9', '#005f56'],
     angle: 0,
-    speedUp: 0,
   };
 
   const paddle = {
@@ -113,6 +112,8 @@
   };
 
   let score = 0;
+  let highScore = localStorage.getItem('highScore') || 0;
+  highScore = Number(highScore);
   let isGameOver = false;
   const scoreElement = document.getElementById('score');
   const gameOverElement = document.getElementById('gameOver');
@@ -128,7 +129,6 @@
 
   function drawBall(){
     ball.angle += 0.05;
-    // Animate gradient color shift
     const gradient = createGradient(ball.x, ball.y, ball.radius, ball.colorStops);
     ctx.save();
     ctx.shadowColor = '#00fff0';
@@ -139,7 +139,6 @@
     ctx.fill();
     ctx.restore();
 
-    // Inner highlight circle
     ctx.save();
     ctx.globalAlpha = 0.5 + 0.5*Math.sin(ball.angle*5);
     ctx.fillStyle = 'white';
@@ -170,12 +169,126 @@
   }
 
   function increaseDifficulty(){
-    // Tăng tốc độ bóng mỗi 5 điểm, tối đa +5 đơn vị
     const speedIncrease = Math.min(5, 0.5 * Math.floor(score / 5));
     const signX = ball.dx > 0 ? 1 : -1;
     const signY = ball.dy > 0 ? 1 : -1;
     ball.dx = signX * (5 + speedIncrease);
     ball.dy = signY * (5 + speedIncrease);
+  }
+
+  function updateScore() {
+    scoreElement.textContent = `Điểm: ${score} | Kỷ lục: ${highScore}`;
+    if(score > 0 && score % 10 === 0){
+      flashScore();
+    }
+    if(score > highScore){
+      highScore = score;
+      localStorage.setItem('highScore', highScore);
+    }
+  }
+
+  function flashScore() {
+    scoreElement.style.transition = 'color 0.3s ease';
+    scoreElement.style.color = '#00ffea';
+    setTimeout(() => {
+      scoreElement.style.color = 'white';
+    }, 300);
+  }
+
+  // Xử lý va chạm bóng với paddle đã fix lỗi dính
+  function checkPaddleCollision(){
+    if (
+      ball.y + ball.radius >= paddle.y &&
+      ball.x > paddle.x &&
+      ball.x < paddle.x + paddle.width &&
+      ball.dy > 0
+    ) {
+      ball.dy = -ball.dy;
+      ball.y = paddle.y - ball.radius - 1; // fix dính bóng
+
+      score++;
+      updateScore();
+
+      paddle.glowAlpha = 1;
+      setTimeout(() => {
+        paddle.glowAlpha = 0;
+      }, 150);
+
+      bounceSound.currentTime = 0;
+      bounceSound.play();
+
+      increaseDifficulty();
+    }
+  }
+
+  // Rung màn hình khi game over
+  function shakeScreen(duration = 600) {
+    const start = performance.now();
+    function shake(time){
+      const elapsed = time - start;
+      if(elapsed < duration){
+        const dx = (Math.random() - 0.5) * 10;
+        const dy = (Math.random() - 0.5) * 10;
+        canvas.style.transform = `translate(${dx}px, ${dy}px)`;
+        requestAnimationFrame(shake);
+      } else {
+        canvas.style.transform = 'translate(0, 0)';
+      }
+    }
+    requestAnimationFrame(shake);
+  }
+
+  function gameOver(){
+    isGameOver = true;
+    gameOverElement.style.display = 'block';
+    shakeScreen();
+    gameOverSound.play();
+    showRestartButton();
+  }
+
+  // Nút chơi lại
+  const restartBtn = document.createElement('button');
+  restartBtn.textContent = 'Chơi lại';
+  Object.assign(restartBtn.style, {
+    position: 'absolute',
+    top: '60%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    padding: '12px 24px',
+    fontSize: '20px',
+    borderRadius: '12px',
+    border: 'none',
+    backgroundColor: '#00ffe7',
+    color: '#003333',
+    fontWeight: '700',
+    cursor: 'pointer',
+    boxShadow: '0 0 15px #00ffe7',
+    userSelect: 'none',
+    display: 'none',
+    zIndex: 20,
+  });
+  document.body.appendChild(restartBtn);
+
+  function showRestartButton(){
+    restartBtn.style.display = 'block';
+  }
+
+  restartBtn.addEventListener('click', () => {
+    restartBtn.style.display = 'none';
+    gameOverElement.style.display = 'none';
+    resetGame();
+  });
+
+  function resetGame(){
+    score = 0;
+    updateScore();
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height / 2;
+    ball.dx = 5;
+    ball.dy = -5;
+    paddle.x = (canvas.width - paddle.width) / 2;
+    isGameOver = false;
+    update();
   }
 
   function update(){
@@ -190,51 +303,25 @@
     ball.x += ball.dx;
     ball.y += ball.dy;
 
-    // Nảy bóng chạm tường trái/phải
+    // Va chạm tường trái/phải
     if(ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0){
       ball.dx = -ball.dx;
     }
 
-    // Nảy bóng chạm tường trên
+    // Va chạm tường trên
     if(ball.y - ball.radius < 0){
       ball.dy = -ball.dy;
     }
 
-    // Bóng chạm paddle
-    if(
-      ball.y + ball.radius >= paddle.y &&
-      ball.x > paddle.x &&
-      ball.x < paddle.x + paddle.width
-    ){
-      ball.dy = -ball.dy;
-      score++;
-      scoreElement.textContent = 'Điểm: ' + score;
+    checkPaddleCollision();
 
-      // Paddle glow effect
-      paddle.glowAlpha = 1;
-      setTimeout(() => {
-        paddle.glowAlpha = 0;
-      }, 150);
-
-      bounceSound.currentTime = 0;
-      bounceSound.play();
-
-      increaseDifficulty();
-    }
-
-    // Bóng rơi xuống dưới -> game over
+    // Bóng rơi dưới màn hình
     if(ball.y - ball.radius > canvas.height){
       gameOver();
     }
 
     movePaddle();
     requestAnimationFrame(update);
-  }
-
-  function gameOver(){
-    isGameOver = true;
-    gameOverElement.style.display = 'block';
-    gameOverSound.play();
   }
 
   document.addEventListener('keydown', e => {
@@ -248,7 +335,9 @@
     }
   });
 
+  updateScore();
   update();
+
 </script>
 </body>
 </html>
