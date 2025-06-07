@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8" />
 <title>Bóng Nảy Neon Cyberpunk - Có Chọn Độ Khó & 2 Nút Game Over</title>
-
 <style>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
   html, body {
     margin: 0; padding: 0; height: 100%;
     background: linear-gradient(270deg, #0f0c29, #302b63, #24243e);
     background-size: 600% 600%;
     animation: gradientBG 15s ease infinite;
-    font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Poppins', sans-serif;
     overflow: hidden;
     color: #0ff;
+    position: relative;
   }
   @keyframes gradientBG {
     0%{background-position:0% 50%}
@@ -35,22 +35,23 @@
     width: 900px;
     height: 675px;
     user-select: none;
+    position: relative;
+    z-index: 1;
   }
   #score {
-    display: none;
     position: absolute;
     top: 15px;
     left: 50%;
     transform: translateX(-50%);
     font-size: 36px;
-    font-weight: 700;
-    font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #0ff;
     text-shadow:
-      0 0 5px #0ff,
-      0 0 10px #0ff;
+      0 0 8px #0ff,
+      0 0 25px #0ff,
+      0 0 40px #0ff;
     user-select: none;
     z-index: 10;
+    animation: neonGlow 2s ease-in-out infinite;
+    display: none;
   }
   #gameOver {
     display: none;
@@ -155,6 +156,51 @@
   #startGameBtn:hover {
     background: #e600e6;
   }
+
+  /* Glow animation */
+  @keyframes neonGlow {
+    0%, 100% {
+      text-shadow:
+        0 0 8px #0ff,
+        0 0 25px #0ff,
+        0 0 40px #0ff;
+    }
+    50% {
+      text-shadow:
+        0 0 20px #0ff,
+        0 0 50px #0ff,
+        0 0 80px #0ff;
+    }
+  }
+
+  /* Paddle overlay style for glow and hit effect */
+  #paddleOverlay {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 160px;
+    height: 20px;
+    pointer-events: none;
+    border-radius: 10px;
+    box-shadow: 0 0 30px #ff00ff;
+    animation: neonGlow 1.5s ease-in-out infinite;
+    z-index: 5;
+  }
+
+  /* Paddle hit shake animation */
+  @keyframes paddleHitShake {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-5px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+    100% { transform: translateX(0); }
+  }
+
+  #paddleOverlay.paddle-hit {
+    animation: paddleHitShake 0.3s ease;
+  }
 </style>
 </head>
 <body>
@@ -172,6 +218,8 @@
 </div>
 
 <canvas id="gameCanvas" width="900" height="675"></canvas>
+<div id="paddleOverlay"></div>
+
 <div id="score">Điểm: 0 | Kỷ lục: 0</div>
 
 <div id="gameOver">
@@ -200,6 +248,8 @@ const gameOverDisplay = document.getElementById('gameOver');
 const restartBtn = document.getElementById('restartBtn');
 const homeBtn = document.getElementById('homeBtn');
 const toggleMusicBtn = document.getElementById('toggleMusicBtn');
+
+const paddleOverlay = document.getElementById('paddleOverlay');
 
 const bounceSound = document.getElementById('bounceSound');
 const gameOverSound = document.getElementById('gameOverSound');
@@ -231,60 +281,64 @@ const difficultySettings = {
 
 function createBall() {
   return {
-    x: Math.random() * (canvas.width - 50) + 25,
+    x: canvas.width / 2,
     y: canvas.height / 2,
-    radius: 20,
-    dx: (Math.random() > 0.5 ? 1 : -1) * (6 + Math.random() * 3),
-    dy: -6,
+    radius: 12,
+    dx: (Math.random() < 0.5 ? -1 : 1) * (3 + Math.random() * 2),
+    dy: -(3 + Math.random() * 2),
+    color: `hsl(${Math.random() * 360}, 100%, 70%)`
   };
 }
 
 function resetGame() {
   balls = [createBall()];
   score = 0;
-  lastAddedBallScore = 0;
   isGameOver = false;
-  paddle.x = (canvas.width - paddle.width) / 2;
-  updateScore();
+  lastAddedBallScore = 0;
+  scoreDisplay.style.display = 'block';
   gameOverDisplay.style.display = 'none';
-  restartBtn.style.display = 'none';
-  homeBtn.style.display = 'none';
-  toggleMusicBtn.style.display = 'block';
-  requestAnimationFrame(update);
+  updateScore();
+  paddle.x = (canvas.width - paddle.width) / 2;
+  paddleOverlay.style.display = 'block';
+  updatePaddleOverlay();
+  if (!musicStarted) {
+    bgMusic.play();
+    musicStarted = true;
+    toggleMusicBtn.style.display = 'block';
+  }
+  loop();
 }
 
 function updateScore() {
-  if (score > highScore) {
-    highScore = score;
-    localStorage.setItem('highScore', highScore);
-  }
   scoreDisplay.textContent = `Điểm: ${score} | Kỷ lục: ${highScore}`;
 }
 
-function drawPaddle() {
-  ctx.shadowColor = '#ff00ff';
-  ctx.shadowBlur = 30;
-  ctx.fillStyle = '#ff00ff';
-  ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+function drawBall(ball) {
+  ctx.beginPath();
+  ctx.fillStyle = ball.color;
+  ctx.shadowColor = ball.color;
+  ctx.shadowBlur = 20;
+  ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+  ctx.fill();
   ctx.shadowBlur = 0;
+  ctx.closePath();
 }
 
-function drawBalls() {
-  balls.forEach(ball => {
-    const gradient = ctx.createRadialGradient(
-      ball.x, ball.y, ball.radius / 3,
-      ball.x, ball.y, ball.radius
-    );
-    gradient.addColorStop(0, '#0ff');
-    gradient.addColorStop(1, 'rgba(0,255,255,0)');
-    ctx.fillStyle = gradient;
-    ctx.shadowColor = '#0ff';
-    ctx.shadowBlur = 25;
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-  });
+function drawPaddle() {
+  ctx.beginPath();
+  const gradient = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x + paddle.width, paddle.y);
+  gradient.addColorStop(0, '#ff00ff');
+  gradient.addColorStop(1, '#00ffff');
+  ctx.fillStyle = gradient;
+  ctx.shadowColor = '#ff00ff';
+  ctx.shadowBlur = 25;
+  ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+  ctx.shadowBlur = 0;
+  ctx.closePath();
+}
+
+function updatePaddleOverlay() {
+  paddleOverlay.style.left = `${paddle.x + paddle.width / 2}px`;
 }
 
 function update() {
@@ -292,33 +346,32 @@ function update() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Di chuyển paddle
-  paddle.x += paddle.dx;
-  if (paddle.x < 0) paddle.x = 0;
-  if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+  // Move paddle with mouse (already handled by event listener)
 
+  // Draw paddle
   drawPaddle();
+  updatePaddleOverlay();
 
-  balls.forEach(ball => {
+  // Move balls and check collisions
+  for (let ball of balls) {
     ball.x += ball.dx;
     ball.y += ball.dy;
 
-    // Va chạm với tường trái/phải
+    // Wall collisions
     if (ball.x + ball.radius > canvas.width) {
-      ball.x = canvas.width - ball.radius;
-      ball.dx = -ball.dx;
-    } else if (ball.x - ball.radius < 0) {
-      ball.x = ball.radius;
-      ball.dx = -ball.dx;
+      ball.dx = -Math.abs(ball.dx);
+      bounceSound.play();
     }
-
-    // Va chạm với trần
+    if (ball.x - ball.radius < 0) {
+      ball.dx = Math.abs(ball.dx);
+      bounceSound.play();
+    }
     if (ball.y - ball.radius < 0) {
-      ball.y = ball.radius;
-      ball.dy = -ball.dy;
+      ball.dy = Math.abs(ball.dy);
+      bounceSound.play();
     }
 
-    // Va chạm với paddle
+    // Paddle collision
     if (
       ball.y + ball.radius >= paddle.y &&
       ball.y + ball.radius <= paddle.y + paddle.height &&
@@ -326,20 +379,22 @@ function update() {
       ball.x < paddle.x + paddle.width &&
       ball.dy > 0
     ) {
-      ball.y = paddle.y - ball.radius;  // Tránh bị dính bóng
       ball.dy = -Math.abs(ball.dy);
-      bounceSound.currentTime = 0;
       bounceSound.play();
 
-      // Tăng điểm + cập nhật điểm
+      // Hiệu ứng rung paddle overlay
+      paddleOverlay.classList.add('paddle-hit');
+      setTimeout(() => paddleOverlay.classList.remove('paddle-hit'), 300);
+
+      // Tăng điểm
       score++;
       updateScore();
 
-      // Tăng tốc bóng theo điểm
+      // Tăng tốc bóng
       ball.dx *= 1.05;
       ball.dy *= 1.05;
 
-      // Check điểm để thêm bóng mới theo độ khó
+      // Thêm bóng mới theo điểm
       const addBallThreshold = difficultySettings[difficulty];
       if (score - lastAddedBallScore >= addBallThreshold) {
         balls.push(createBall());
@@ -347,88 +402,79 @@ function update() {
       }
     }
 
-    // Bóng rơi dưới màn hình thì game over
+    // Nếu bóng rơi dưới paddle (game over)
     if (ball.y - ball.radius > canvas.height) {
       gameOver();
+      return;
     }
-  });
+
+    drawBall(ball);
+  }
 
   requestAnimationFrame(update);
 }
 
 function gameOver() {
   isGameOver = true;
+  scoreDisplay.style.display = 'none';
   gameOverDisplay.style.display = 'block';
-  restartBtn.style.display = 'inline-block';
-  homeBtn.style.display = 'inline-block';
-  toggleMusicBtn.style.display = 'none';
-  gameOverSound.currentTime = 0;
+  paddleOverlay.style.display = 'none';
   gameOverSound.play();
+
+  // Lưu điểm cao
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('highScore', highScore);
+  }
 }
 
-// Bắt sự kiện bàn phím để điều khiển paddle
-document.addEventListener('keydown', e => {
-  if (e.code === 'ArrowLeft') {
-    paddle.dx = -paddle.speed;
-  } else if (e.code === 'ArrowRight') {
-    paddle.dx = paddle.speed;
-  }
+canvas.addEventListener('mousemove', (e) => {
+  if (isGameOver) return;
+  const rect = canvas.getBoundingClientRect();
+  let mouseX = e.clientX - rect.left;
+  paddle.x = mouseX - paddle.width / 2;
+
+  // Giới hạn paddle trong canvas
+  if (paddle.x < 0) paddle.x = 0;
+  if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
 });
 
-document.addEventListener('keyup', e => {
-  if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
-    paddle.dx = 0;
-  }
+startGameBtn.addEventListener('click', () => {
+  difficulty = difficultySelect.value;
+  resetGame();
 });
 
-// Bật/tắt nhạc nền
+restartBtn.addEventListener('click', () => {
+  resetGame();
+});
+
+homeBtn.addEventListener('click', () => {
+  window.location.href = 'https://example.com'; // Thay link trang chủ của bạn
+});
+
 toggleMusicBtn.addEventListener('click', () => {
-  if (!musicStarted) {
-    bgMusic.volume = 0.3;
-    bgMusic.play();
-    musicStarted = true;
-    toggleMusicBtn.textContent = '🔊';
-  } else if (bgMusic.paused) {
+  if (bgMusic.paused) {
     bgMusic.play();
     toggleMusicBtn.textContent = '🔊';
   } else {
     bgMusic.pause();
-    toggleMusicBtn.textContent = '🔈';
+    toggleMusicBtn.textContent = '🔇';
   }
 });
 
-// Bắt đầu game từ menu chọn độ khó
-startGameBtn.addEventListener('click', () => {
-  difficulty = difficultySelect.value;
-  difficultySelect.style.display = 'none';
-  scoreDisplay.style.display = 'block';
-  resetGame();
+// Mở nhạc tự động nếu có thể
+document.body.addEventListener('click', () => {
+  if (!musicStarted) {
+    bgMusic.play();
+    musicStarted = true;
+    toggleMusicBtn.style.display = 'block';
+  }
 });
 
-// Xử lý nút chơi lại
-restartBtn.addEventListener('click', () => {
-  resetGame();
-  scoreDisplay.style.display = 'block';
-  gameOverDisplay.style.display = 'none';
-  restartBtn.style.display = 'none';
-  homeBtn.style.display = 'none';
-  toggleMusicBtn.style.display = 'block';
-});
+// Khởi tạo giao diện điểm và overlay paddle ban đầu
+scoreDisplay.textContent = `Điểm: 0 | Kỷ lục: ${highScore}`;
+paddleOverlay.style.display = 'none';
 
-// Xử lý nút về trang chủ
-homeBtn.addEventListener('click', () => {
-  isGameOver = false;
-  balls = [];
-  score = 0;
-  lastAddedBallScore = 0;
-  scoreDisplay.style.display = 'none';
-  gameOverDisplay.style.display = 'none';
-  restartBtn.style.display = 'none';
-  homeBtn.style.display = 'none';
-  toggleMusicBtn.style.display = 'none';
-  difficultySelect.style.display = 'block';
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-});
 </script>
 
 </body>
