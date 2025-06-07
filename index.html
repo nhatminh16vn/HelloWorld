@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Game Đuổi Bắt Nâng Cao - 1 Bot Ban Đầu</title>
+<title>Game Đuổi Bắt Nâng Cao - 2 Nút Thua</title>
 <style>
   body {
     margin: 0; background: #111; color: #eee; font-family: Arial, sans-serif;
@@ -25,6 +25,25 @@
     font-weight: bold;
     color: #44aaff;
   }
+  #startBtn, #restartBtn, #exitBtn {
+    margin-top: 15px;
+    padding: 10px 25px;
+    font-size: 20px;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    background: #44aaff;
+    color: white;
+    transition: background-color 0.3s;
+  }
+  #startBtn:hover, #restartBtn:hover, #exitBtn:hover {
+    background: #2a7fcc;
+  }
+  #buttonsContainer {
+    margin-top: 20px;
+    display: none;
+    gap: 15px;
+  }
 </style>
 </head>
 <body>
@@ -33,6 +52,12 @@
 <div id="info">
   Thời gian sống sót: <span id="timer">0.0</span> giây<br/>
   Điểm cao nhất: <span id="highscore">0.0</span> giây
+</div>
+<button id="startBtn">Start</button>
+
+<div id="buttonsContainer">
+  <button id="restartBtn">Chơi lại</button>
+  <button id="exitBtn">Thoát</button>
 </div>
 
 <script>
@@ -59,12 +84,18 @@ let highScore = parseFloat(localStorage.getItem('chaseHighScore')) || 0;
 document.getElementById('highscore').textContent = highScore.toFixed(1);
 
 let lastAddTime = 0;
+let running = false;  // Game đang chạy hay không
+
+const startBtn = document.getElementById('startBtn');
+const buttonsContainer = document.getElementById('buttonsContainer');
+const restartBtn = document.getElementById('restartBtn');
+const exitBtn = document.getElementById('exitBtn');
 
 window.addEventListener('keydown', e => {
-  keys[e.key.toLowerCase()] = true;
+  if (running) keys[e.key.toLowerCase()] = true;
 });
 window.addEventListener('keyup', e => {
-  keys[e.key.toLowerCase()] = false;
+  if (running) keys[e.key.toLowerCase()] = false;
 });
 
 function movePlayer() {
@@ -146,7 +177,22 @@ function createNewChaser() {
   return { x, y, size, baseSpeed, speed: baseSpeed, color: c.color, shadowColor: c.shadowColor, phase: Math.random() * Math.PI * 2 };
 }
 
+function resetGame() {
+  player.x = 50;
+  player.y = 50;
+  chasers.length = 0;
+  chasers.push({ x: 500, y: 300, size: 30, baseSpeed: 2.5, speed: 2.5, color: 'red', shadowColor: 'rgba(255,0,0,0.6)', phase: 0 });
+  startTime = null;
+  gameOver = false;
+  lastAddTime = 0;
+  keys = {};
+  buttonsContainer.style.display = 'none';
+  startBtn.style.display = 'inline-block';
+}
+
 function gameLoop() {
+  if (!running) return;
+
   if (gameOver) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#44aaff';
@@ -154,7 +200,11 @@ function gameLoop() {
     ctx.textAlign = 'center';
     ctx.fillText('Bạn đã bị bắt!', canvas.width / 2, canvas.height / 2 - 20);
     ctx.font = '24px Arial';
-    ctx.fillText('Nhấn F5 để chơi lại', canvas.width / 2, canvas.height / 2 + 20);
+    ctx.fillText('Chọn Chơi lại hoặc Thoát', canvas.width / 2, canvas.height / 2 + 20);
+    
+    buttonsContainer.style.display = 'flex';
+    startBtn.style.display = 'none';
+    running = false;
     return;
   }
   
@@ -188,7 +238,28 @@ function gameLoop() {
   if (!gameOver) requestAnimationFrame(gameLoop);
 }
 
-gameLoop();
+startBtn.addEventListener('click', () => {
+  resetGame();
+  running = true;
+  gameLoop();
+});
+
+restartBtn.addEventListener('click', () => {
+  resetGame();
+  running = true;
+  gameLoop();
+});
+
+exitBtn.addEventListener('click', () => {
+  running = false;
+  buttonsContainer.style.display = 'none';
+  startBtn.style.display = 'inline-block';
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#44aaff';
+  ctx.font = '36px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('Cảm ơn bạn đã chơi!', canvas.width / 2, canvas.height / 2);
+});
 </script>
 
 </body>
