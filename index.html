@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Tranh Sống - Bảo Tàng Bí Ẩn</title>
   <style>
     body {
@@ -45,6 +45,20 @@
       border-radius: 12px;
       display: none;
     }
+    /* Hiệu ứng chữ điểm nhấp nháy */
+    .infinite-score {
+      color: #0ff;
+      font-family: monospace;
+      font-size: 18px;
+      margin-top: 15px;
+      animation: flicker 1.5s infinite;
+      user-select: all;
+    }
+    @keyframes flicker {
+      0%   {opacity: 1;}
+      50%  {opacity: 0.5;}
+      100% {opacity: 1;}
+    }
   </style>
 </head>
 <body>
@@ -54,23 +68,23 @@
 
   <div class="gallery">
     <div class="painting" onclick="showDialogue(0)">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Legionary_3rd_century.jpg/300px-Legionary_3rd_century.jpg" alt="Chiến binh La Mã">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Legionary_3rd_century.jpg/300px-Legionary_3rd_century.jpg" alt="Chiến binh La Mã" />
       <p>Chiến binh La Mã</p>
     </div>
     <div class="painting" onclick="showDialogue(1)">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Tutankhamun_Egyptian_Museum.jpg/300px-Tutankhamun_Egyptian_Museum.jpg" alt="Pharaoh thức dậy">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Tutankhamun_Egyptian_Museum.jpg/300px-Tutankhamun_Egyptian_Museum.jpg" alt="Pharaoh thức dậy" />
       <p>Pharaoh thức dậy</p>
     </div>
     <div class="painting" onclick="showDialogue(2)">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Napoleon_Bonaparte2.jpg/300px-Napoleon_Bonaparte2.jpg" alt="Napoleon chỉ huy">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Napoleon_Bonaparte2.jpg/300px-Napoleon_Bonaparte2.jpg" alt="Napoleon chỉ huy" />
       <p>Napoleon chỉ huy</p>
     </div>
     <div class="painting" onclick="showDialogue(3)">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Einstein_blackboard.jpg/300px-Einstein_blackboard.jpg" alt="Einstein giảng bài">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Einstein_blackboard.jpg/300px-Einstein_blackboard.jpg" alt="Einstein giảng bài" />
       <p>Einstein giảng bài</p>
     </div>
     <div class="painting" onclick="showDialogue(4)">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Artificial_Intelligence_%26_AI_%26_Machine_Learning_-_30212411048.jpg/300px-Artificial_Intelligence_%26_AI_%26_Machine_Learning_-_30212411048.jpg" alt="Người tương lai">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Artificial_Intelligence_%26_AI_%26_Machine_Learning_-_30212411048.jpg/300px-Artificial_Intelligence_%26_AI_%26_Machine_Learning_-_30212411048.jpg" alt="Người tương lai" />
       <p>Người tương lai</p>
     </div>
   </div>
@@ -78,6 +92,7 @@
   <div id="dialogue" class="dialogue">
     <h2 id="npc-name"></h2>
     <p id="npc-line"></p>
+    <p id="score" class="infinite-score" style="display:none;"></p>
   </div>
 
   <script>
@@ -100,13 +115,26 @@
       },
       {
         name: "Người từ Tương Lai",
-        line: "Tôi đến từ năm 3025. Loài người đang đứng trước ngưỡng cửa quyết định: cứu Trái Đất hoặc biến mất mãi mãi."
+        line: "Tôi đến từ năm 3025. Loài người đang đứng trước ngưỡng cửa quyết định: cứu Trái Đất hoặc biến mất mãi mãi.",
+        score: "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999x"
       }
     ];
 
     function showDialogue(index) {
-      document.getElementById("npc-name").textContent = characters[index].name;
-      document.getElementById("npc-line").textContent = characters[index].line;
+      const npcName = document.getElementById("npc-name");
+      const npcLine = document.getElementById("npc-line");
+      const scoreEl = document.getElementById("score");
+
+      npcName.textContent = characters[index].name;
+      npcLine.textContent = characters[index].line;
+
+      if (characters[index].score) {
+        scoreEl.textContent = characters[index].score;
+        scoreEl.style.display = "block";
+      } else {
+        scoreEl.style.display = "none";
+      }
+
       document.getElementById("dialogue").style.display = "block";
     }
   </script>
