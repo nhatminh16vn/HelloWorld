@@ -128,6 +128,42 @@
       obstacles = [];
     }
 
+function isOverlapping(x, y, width, height, existingElements) {
+  const rect1 = {
+    left: x,
+    right: x + width,
+    top: y,
+    bottom: y + height
+  let tries = 0;
+do {
+  posX = getRandom(0, window.innerWidth - playerSize);
+  posY = getRandom(0, window.innerHeight - playerSize);
+  tries++;
+} while (isOverlapping(posX, posY, playerSize, playerSize, obstacles) && tries < 50);
+player.style.left = posX + "px";
+player.style.top = posY + "px";
+tries = 0;
+let goalX, goalY;
+do {
+  goalX = getRandom(0, window.innerWidth - 60);
+  goalY = getRandom(0, window.innerHeight - 60);
+  tries++;
+} while (isOverlapping(goalX, goalY, 60, 60, obstacles) && tries < 50);
+goal.style.left = goalX + "px";
+goal.style.top = goalY + "px";
+}
+
+  for (const el of existingElements) {
+    const rect2 = el.getBoundingClientRect();
+    if (!(rect1.right < rect2.left || rect1.left > rect2.right ||
+          rect1.bottom < rect2.top || rect1.top > rect2.bottom)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+    
     function checkCollision(rect1, rect2) {
       return !(
         rect1.right < rect2.left ||
