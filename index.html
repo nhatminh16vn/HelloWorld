@@ -2,10 +2,10 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Maze Auto Play</title>
+  <title>Mê Cung AI + Người Chơi</title>
   <style>
-    body { background: #111; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    canvas { border: 2px solid #eee; background: #222; }
+    body { background: #111; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    canvas { background: #222; border: 2px solid #eee; }
   </style>
 </head>
 <body>
@@ -24,15 +24,12 @@ class Cell {
   }
 
   draw() {
-    const x = this.x * cellSize;
-    const y = this.y * cellSize;
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 2;
-
-    if (this.walls[0]) drawLine(x, y, x + cellSize, y);
-    if (this.walls[1]) drawLine(x + cellSize, y, x + cellSize, y + cellSize);
-    if (this.walls[2]) drawLine(x + cellSize, y + cellSize, x, y + cellSize);
-    if (this.walls[3]) drawLine(x, y + cellSize, x, y);
+    const x = this.x * cellSize, y = this.y * cellSize;
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+    if (this.walls[0]) drawLine(x, y, x + cellSize, y); // top
+    if (this.walls[1]) drawLine(x + cellSize, y, x + cellSize, y + cellSize); // right
+    if (this.walls[2]) drawLine(x + cellSize, y + cellSize, x, y + cellSize); // bottom
+    if (this.walls[3]) drawLine(x, y + cellSize, x, y); // left
 
     if (this.visited) {
       ctx.fillStyle = "#333";
@@ -46,12 +43,12 @@ function drawLine(x1, y1, x2, y2) {
 }
 
 const grid = [], stack = [];
-for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) grid.push(new Cell(x, y));
+for (let y = 0; y < rows; y++)
+  for (let x = 0; x < cols; x++) grid.push(new Cell(x, y));
 function index(x, y) {
   if (x < 0 || y < 0 || x >= cols || y >= rows) return -1;
   return x + y * cols;
 }
-
 function removeWalls(a, b) {
   const dx = a.x - b.x, dy = a.y - b.y;
   if (dx === 1) { a.walls[3] = b.walls[1] = false; }
@@ -59,7 +56,6 @@ function removeWalls(a, b) {
   if (dy === 1) { a.walls[0] = b.walls[2] = false; }
   else if (dy === -1) { a.walls[2] = b.walls[0] = false; }
 }
-
 let current = grid[0];
 function generateStep() {
   current.visited = true;
@@ -73,27 +69,21 @@ function generateStep() {
   draw();
   if (stack.length > 0) requestAnimationFrame(generateStep);
 }
-
 function getUnvisitedNeighbors(cell) {
   const {x, y} = cell;
-  const neighbors = [];
-  const top = grid[index(x, y - 1)];
-  const right = grid[index(x + 1, y)];
-  const bottom = grid[index(x, y + 1)];
-  const left = grid[index(x - 1, y)];
-  if (top && !top.visited) neighbors.push(top);
-  if (right && !right.visited) neighbors.push(right);
-  if (bottom && !bottom.visited) neighbors.push(bottom);
-  if (left && !left.visited) neighbors.push(left);
-  return neighbors;
+  const n = [];
+  [ [x, y-1], [x+1, y], [x, y+1], [x-1, y] ].forEach(([nx, ny]) => {
+    const ni = index(nx, ny);
+    if (ni !== -1 && !grid[ni].visited) n.push(grid[ni]);
+  });
+  return n;
 }
-
-let player = { x: 0, y: 0 };
+let player = { x: 0, y: 0 }, drawX = 0, drawY = 0;
 const goal = { x: cols - 1, y: rows - 1 };
 
-function drawPlayer() {
+function drawPlayerSmooth() {
   ctx.fillStyle = 'lime';
-  ctx.fillRect(player.x * cellSize + 5, player.y * cellSize + 5, cellSize - 10, cellSize - 10);
+  ctx.fillRect(drawX + 5, drawY + 5, cellSize - 10, cellSize - 10);
   ctx.fillStyle = 'red';
   ctx.fillRect(goal.x * cellSize + 8, goal.y * cellSize + 8, cellSize - 16, cellSize - 16);
 }
@@ -101,34 +91,16 @@ function drawPlayer() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   grid.forEach(c => c.draw());
-  drawPlayer();
+  drawPlayerSmooth();
 }
 
-function movePlayerAuto(path) {
-  if (!path || path.length === 0) return;
-  const next = path.shift();
-  player.x = next.x;
-  player.y = next.y;
-  draw();
-  if (player.x === goal.x && player.y === goal.y) {
-    setTimeout(() => alert("🎉 AI đã thắng!"), 100);
-  } else {
-    setTimeout(() => movePlayerAuto(path), 100);
-  }
-}
-
-// BFS để tìm đường
 function findPathBFS(start, end) {
-  const queue = [start];
-  const visited = new Set();
-  const cameFrom = {};
-  const key = (x, y) => `${x},${y}`;
-  visited.add(key(start.x, start.y));
+  const queue = [start], visited = new Set(), cameFrom = {};
+  const key = (x, y) => `${x},${y}`; visited.add(key(start.x, start.y));
 
   while (queue.length > 0) {
-    const current = queue.shift();
-    if (current.x === end.x && current.y === end.y) {
-      // Xây dựng lại đường đi
+    const curr = queue.shift();
+    if (curr.x === end.x && curr.y === end.y) {
       const path = [];
       let c = key(end.x, end.y);
       while (c !== key(start.x, start.y)) {
@@ -139,39 +111,77 @@ function findPathBFS(start, end) {
       return path;
     }
 
-    const i = index(current.x, current.y);
-    const cell = grid[i];
-    const dirs = [
-      {dx: 0, dy: -1, wall: 0},
-      {dx: 1, dy: 0, wall: 1},
-      {dx: 0, dy: 1, wall: 2},
-      {dx: -1, dy: 0, wall: 3}
-    ];
-
-    for (let d of dirs) {
-      if (!cell.walls[d.wall]) {
-        const nx = current.x + d.dx, ny = current.y + d.dy;
-        const nk = key(nx, ny);
-        if (!visited.has(nk)) {
-          visited.add(nk);
-          cameFrom[nk] = key(current.x, current.y);
+    const cell = grid[index(curr.x, curr.y)];
+    [ [0,-1,0], [1,0,1], [0,1,2], [-1,0,3] ].forEach(([dx, dy, wall]) => {
+      if (!cell.walls[wall]) {
+        const nx = curr.x + dx, ny = curr.y + dy, k = key(nx, ny);
+        if (!visited.has(k)) {
+          visited.add(k); cameFrom[k] = key(curr.x, curr.y);
           queue.push({x: nx, y: ny});
         }
       }
-    }
+    });
   }
   return null;
 }
 
-// Kích hoạt tự chơi bằng phím A
+function movePlayerAutoSmooth(path) {
+  if (!path || path.length === 0) return;
+  const next = path.shift();
+  const startX = player.x * cellSize, startY = player.y * cellSize;
+  const endX = next.x * cellSize, endY = next.y * cellSize;
+  const duration = 300, startTime = performance.now();
+
+  function animate(t) {
+    const elapsed = t - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    drawX = startX + (endX - startX) * progress;
+    drawY = startY + (endY - startY) * progress;
+    draw();
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      player.x = next.x; player.y = next.y;
+      if (player.x === goal.x && player.y === goal.y) {
+        setTimeout(() => alert("🎉 AI đã chiến thắng!"), 100);
+      } else {
+        setTimeout(() => movePlayerAutoSmooth(path), 50);
+      }
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+function manualMove(dx, dy) {
+  const nx = player.x + dx, ny = player.y + dy;
+  const i = index(player.x, player.y);
+  const ni = index(nx, ny);
+  if (ni === -1) return;
+  const cell = grid[i];
+  const dir = dx === 1 ? 1 : dx === -1 ? 3 : dy === 1 ? 2 : 0;
+  if (!cell.walls[dir]) {
+    player.x = nx; player.y = ny;
+    drawX = nx * cellSize;
+    drawY = ny * cellSize;
+    draw();
+    if (player.x === goal.x && player.y === goal.y)
+      setTimeout(() => alert("🎉 Bạn đã chiến thắng!"), 100);
+  }
+}
+
 window.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowUp') manualMove(0, -1);
+  if (e.key === 'ArrowDown') manualMove(0, 1);
+  if (e.key === 'ArrowLeft') manualMove(-1, 0);
+  if (e.key === 'ArrowRight') manualMove(1, 0);
   if (e.key === 'a' || e.key === 'A') {
     const path = findPathBFS(player, goal);
-    if (path) movePlayerAuto(path);
+    if (path) movePlayerAutoSmooth(path);
   }
 });
 
-generateStep(); // bắt đầu sinh mê cung
+drawX = 0; drawY = 0;
+generateStep();
 </script>
 </body>
 </html>
