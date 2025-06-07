@@ -3,242 +3,112 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Game Đuổi Bắt</title>
+<title>Mê Cung Đơn Giản</title>
 <style>
   body {
-    margin: 0; background: #111; color: #eee; font-family: Arial, sans-serif;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;
-  }
-  #gameCanvas {
-    background: #222;
-    border: 2px solid #555;
-    display: block;
-  }
-  #info {
-    margin-top: 10px;
-    font-size: 20px;
     display: flex;
-    gap: 15px;
+    justify-content: center;
     align-items: center;
+    height: 100vh;
+    background: #222;
+    color: #eee;
+    font-family: Arial, sans-serif;
   }
-  #buttonsContainer {
-    margin-top: 15px;
-    display: none;
-    gap: 10px;
+  #maze {
+    display: grid;
+    grid-template-columns: repeat(10, 40px);
+    grid-template-rows: repeat(10, 40px);
+    gap: 2px;
+    background: #111;
   }
-  button {
-    font-size: 18px;
-    padding: 8px 16px;
-    cursor: pointer;
-    border: none;
-    border-radius: 5px;
-    background: #44aaff;
-    color: white;
-    transition: background 0.3s;
+  .cell {
+    width: 40px;
+    height: 40px;
+    background: #444;
+    box-sizing: border-box;
   }
-  button:hover {
-    background: #2288dd;
+  .wall {
+    background: #222;
   }
-  #startBtn {
-    margin-top: 15px;
-    font-size: 20px;
-    padding: 10px 20px;
-    background: #22cc88;
+  .start {
+    background: #4CAF50;
   }
-  #startBtn:hover {
-    background: #1aa76a;
+  .end {
+    background: #f44336;
+  }
+  .player {
+    background: #2196F3;
   }
 </style>
 </head>
 <body>
 
-<canvas id="gameCanvas" width="600" height="400"></canvas>
-
-<div id="info">
-  Thời gian sống sót: <span id="timer">0.0</span> giây
-  <span> | Điểm cao nhất: <span id="highscore">0.0</span></span>
-</div>
-
-<button id="startBtn">Bắt đầu</button>
-
-<div id="buttonsContainer">
-  <button id="restartBtn">Chơi lại</button>
-  <button id="exitBtn">Thoát</button>
-</div>
+<div id="maze"></div>
 
 <script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+  // Mảng mê cung: 0 = đường đi, 1 = tường
+  // Kích thước 10x10
+  const mazeMap = [
+    [1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,1,0,0,0,0,1],
+    [1,0,1,0,1,0,1,1,0,1],
+    [1,0,1,0,0,0,0,1,0,1],
+    [1,0,1,1,1,1,0,1,0,1],
+    [1,0,0,0,0,1,0,1,0,1],
+    [1,1,1,1,0,1,0,1,0,1],
+    [1,0,0,1,0,0,0,1,0,1],
+    [1,0,0,0,0,1,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1],
+  ];
 
-const player = {
-  x: 50,
-  y: 50,
-  size: 30,
-  speed: 5,
-  color: 'cyan',
-};
+  const mazeElement = document.getElementById('maze');
 
-const chasers = [
-  { x: 500, y: 300, size: 30, baseSpeed: 2.5, speed: 2.5, color: 'red', phase: 0 },
-];
+  let playerPos = {x: 1, y: 1}; // Điểm bắt đầu
+  const endPos = {x: 8, y: 8};  // Điểm kết thúc
 
-let keys = {};
-let startTime = null;
-let gameOver = false;
-let highScore = parseFloat(localStorage.getItem('chaseHighScore')) || 0;
-document.getElementById('highscore').textContent = highScore.toFixed(1);
-
-let lastAddTime = 0;
-let running = false;
-
-const startBtn = document.getElementById('startBtn');
-const buttonsContainer = document.getElementById('buttonsContainer');
-const restartBtn = document.getElementById('restartBtn');
-const exitBtn = document.getElementById('exitBtn');
-
-window.addEventListener('keydown', e => {
-  if (running) keys[e.key.toLowerCase()] = true;
-});
-window.addEventListener('keyup', e => {
-  if (running) keys[e.key.toLowerCase()] = false;
-});
-
-function movePlayer() {
-  if (keys['w'] || keys['arrowup']) player.y -= player.speed;
-  if (keys['s'] || keys['arrowdown']) player.y += player.speed;
-  if (keys['a'] || keys['arrowleft']) player.x -= player.speed;
-  if (keys['d'] || keys['arrowright']) player.x += player.speed;
-
-  player.x = Math.max(0, Math.min(player.x, canvas.width - player.size));
-  player.y = Math.max(0, Math.min(player.y, canvas.height - player.size));
-}
-
-function moveChaser(chaser, elapsed) {
-  chaser.speed = chaser.baseSpeed + elapsed * 0.12;
-
-  let dx = player.x - chaser.x;
-  let dy = player.y - chaser.y;
-  let dist = Math.sqrt(dx * dx + dy * dy);
-
-  if (dist > 0) {
-    chaser.x += (dx / dist) * chaser.speed;
-    chaser.y += (dy / dist) * chaser.speed;
-  }
-}
-
-function checkCollision(obj1, obj2) {
-  return !(
-    obj1.x + obj1.size < obj2.x ||
-    obj1.x > obj2.x + obj2.size ||
-    obj1.y + obj1.size < obj2.y ||
-    obj1.y > obj2.y + obj2.size
-  );
-}
-
-function updateTimer() {
-  if (!startTime) startTime = Date.now();
-  let elapsed = (Date.now() - startTime) / 1000;
-  document.getElementById('timer').textContent = elapsed.toFixed(1);
-  return elapsed;
-}
-
-function drawRect(obj) {
-  ctx.fillStyle = obj.color;
-  ctx.fillRect(obj.x, obj.y, obj.size, obj.size);
-}
-
-function createNewChaser() {
-  const size = 30;
-  let x = Math.random() * (canvas.width - size);
-  let y = Math.random() * (canvas.height - size);
-  let baseSpeed = 1.5 + Math.random() * 1.5;
-  const colors = ['red', 'orange', 'yellow', 'lime', 'cyan', 'magenta'];
-  let color = colors[Math.floor(Math.random() * colors.length)];
-
-  return { x, y, size, baseSpeed, speed: baseSpeed, color, phase: Math.random() * Math.PI * 2 };
-}
-
-function resetGame() {
-  player.x = 50;
-  player.y = 50;
-  chasers.length = 0;
-  chasers.push({ x: 500, y: 300, size: 30, baseSpeed: 2.5, speed: 2.5, color: 'red', phase: 0 });
-  startTime = null;
-  gameOver = false;
-  lastAddTime = 0;
-  keys = {};
-  buttonsContainer.style.display = 'none';
-  startBtn.style.display = 'none';
-}
-
-function gameLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  if (gameOver) {
-    ctx.fillStyle = '#44aaff';
-    ctx.font = '48px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Bạn đã bị bắt!', canvas.width / 2, canvas.height / 2 - 20);
-    ctx.font = '24px Arial';
-    ctx.fillText('Chọn Chơi lại hoặc Thoát', canvas.width / 2, canvas.height / 2 + 20);
-
-    buttonsContainer.style.display = 'flex';
-    running = false;
-
-    requestAnimationFrame(gameLoop);
-    return;
-  }
-
-  movePlayer();
-
-  let elapsed = updateTimer();
-
-  if (elapsed - lastAddTime >= 1) {
-    chasers.push(createNewChaser());
-    lastAddTime = elapsed;
-  }
-
-  for (let chaser of chasers) {
-    moveChaser(chaser, elapsed);
-    drawRect(chaser);
-
-    if (checkCollision(player, chaser)) {
-      gameOver = true;
-      if (elapsed > highScore) {
-        highScore = elapsed;
-        localStorage.setItem('chaseHighScore', highScore.toFixed(1));
-        document.getElementById('highscore').textContent = highScore.toFixed(1);
+  function drawMaze() {
+    mazeElement.innerHTML = '';
+    for(let y=0; y<10; y++) {
+      for(let x=0; x<10; x++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        if(mazeMap[y][x] === 1) cell.classList.add('wall');
+        if(x === playerPos.x && y === playerPos.y) cell.classList.add('player');
+        if(x === 1 && y === 1) cell.classList.add('start');
+        if(x === endPos.x && y === endPos.y) cell.classList.add('end');
+        mazeElement.appendChild(cell);
       }
     }
   }
 
-  drawRect(player);
+  function movePlayer(dx, dy) {
+    const newX = playerPos.x + dx;
+    const newY = playerPos.y + dy;
+    // Kiểm tra nếu vị trí mới không phải tường và trong giới hạn
+    if(newX >= 0 && newX < 10 && newY >= 0 && newY < 10 && mazeMap[newY][newX] === 0) {
+      playerPos.x = newX;
+      playerPos.y = newY;
+      drawMaze();
+      checkWin();
+    }
+  }
 
-  if (!gameOver) requestAnimationFrame(gameLoop);
-}
+  function checkWin() {
+    if(playerPos.x === endPos.x && playerPos.y === endPos.y) {
+      setTimeout(() => alert('Bạn đã thắng!'), 100);
+    }
+  }
 
-startBtn.addEventListener('click', () => {
-  resetGame();
-  running = true;
-  gameLoop();
-});
+  window.addEventListener('keydown', (e) => {
+    switch(e.key) {
+      case 'ArrowUp': movePlayer(0, -1); break;
+      case 'ArrowDown': movePlayer(0, 1); break;
+      case 'ArrowLeft': movePlayer(-1, 0); break;
+      case 'ArrowRight': movePlayer(1, 0); break;
+    }
+  });
 
-restartBtn.addEventListener('click', () => {
-  resetGame();
-  running = true;
-  gameLoop();
-});
-
-exitBtn.addEventListener('click', () => {
-  running = false;
-  buttonsContainer.style.display = 'none';
-  startBtn.style.display = 'inline-block';
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#44aaff';
-  ctx.font = '36px Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('Cảm ơn bạn đã chơi!', canvas.width / 2, canvas.height / 2);
-});
+  drawMaze();
 </script>
 
 </body>
