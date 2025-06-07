@@ -1,68 +1,119 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Bóng Nảy - Có Nhạc + Tăng Bóng</title>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: radial-gradient(circle, #0f2027, #203a43, #2c5364);
-      font-family: 'Arial', sans-serif;
-      color: white;
-    }
-    #score {
-      position: absolute;
-      top: 15px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 24px;
-      font-weight: bold;
-      z-index: 10;
-    }
-    #gameOver {
-      position: absolute;
-      top: 45%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 36px;
-      color: red;
-      display: none;
-      z-index: 10;
-    }
-    canvas {
-      display: block;
-      margin: auto;
-      background: transparent;
-    }
-    #restartBtn {
-      position: absolute;
-      top: 60%;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 10px 20px;
-      font-size: 20px;
-      background: #00ffe7;
-      border: none;
-      border-radius: 10px;
-      color: black;
-      font-weight: bold;
-      cursor: pointer;
-      display: none;
-      z-index: 10;
-    }
-    #toggleMusicBtn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      font-size: 20px;
-      background: transparent;
-      border: none;
-      color: white;
-      cursor: pointer;
-      z-index: 10;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Bóng Nảy Neon Cyberpunk</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+  /* Nền gradient chuyển động */
+  body, html {
+    margin: 0; padding: 0; height: 100%;
+    background: linear-gradient(270deg, #0f0c29, #302b63, #24243e);
+    background-size: 600% 600%;
+    animation: gradientBG 15s ease infinite;
+    font-family: 'Orbitron', sans-serif;
+    overflow: hidden;
+    color: #0ff;
+  }
+
+  @keyframes gradientBG {
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
+  }
+
+  #gameCanvas {
+    display: block;
+    margin: 0 auto;
+    background: #111111cc;
+    box-shadow:
+      0 0 20px #0ff,
+      0 0 40px #0ff,
+      inset 0 0 10px #0ff,
+      inset 0 0 30px #0ff;
+    border-radius: 12px;
+  }
+
+  #score {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 28px;
+    text-shadow:
+      0 0 5px #0ff,
+      0 0 15px #0ff,
+      0 0 20px #0ff;
+    user-select: none;
+    z-index: 10;
+  }
+
+  #gameOver {
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    color: #f0f;
+    text-shadow:
+      0 0 10px #f0f,
+      0 0 20px #f0f,
+      0 0 30px #ff00ff;
+    display: none;
+    user-select: none;
+    z-index: 10;
+  }
+
+  #restartBtn {
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 14px 28px;
+    font-size: 22px;
+    font-weight: 700;
+    background: #ff00ff;
+    border: none;
+    border-radius: 15px;
+    color: #111;
+    cursor: pointer;
+    box-shadow:
+      0 0 15px #ff00ff,
+      0 0 30px #ff00ff;
+    transition: all 0.3s ease;
+    display: none;
+    user-select: none;
+    z-index: 10;
+  }
+  #restartBtn:hover {
+    background: #e600e6;
+    box-shadow:
+      0 0 30px #ff00ff,
+      0 0 50px #ff00ff,
+      0 0 60px #ff00ff;
+    color: white;
+  }
+
+  #toggleMusicBtn {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    font-size: 28px;
+    background: none;
+    border: none;
+    color: #0ff;
+    cursor: pointer;
+    user-select: none;
+    text-shadow:
+      0 0 10px #0ff,
+      0 0 20px #0ff;
+    z-index: 10;
+    transition: transform 0.3s ease;
+  }
+  #toggleMusicBtn:hover {
+    transform: scale(1.2);
+  }
+</style>
 </head>
 <body>
 
@@ -70,7 +121,7 @@
 <div id="score">Điểm: 0 | Kỷ lục: 0</div>
 <div id="gameOver">Game Over!</div>
 <button id="restartBtn">Chơi lại</button>
-<button id="toggleMusicBtn">🔊</button>
+<button id="toggleMusicBtn" title="Bật/Tắt nhạc">🔊</button>
 
 <!-- Âm thanh -->
 <audio id="bounceSound" src="https://actions.google.com/sounds/v1/sports/basketball_bounce.ogg" preload="auto"></audio>
@@ -107,12 +158,11 @@ let lastAddedBallScore = 0;
 
 function createBall() {
   return {
-    x: Math.random() * canvas.width,
+    x: Math.random() * (canvas.width - 40) + 20,
     y: canvas.height / 2,
     radius: 15,
     dx: (Math.random() > 0.5 ? 1 : -1) * (5 + Math.random() * 2),
     dy: -5,
-    angle: 0
   };
 }
 
@@ -137,17 +187,30 @@ function updateScore() {
 }
 
 function drawPaddle() {
-  ctx.fillStyle = '#ff5252';
+  // Paddle Neon glow
+  ctx.shadowColor = '#ff00ff';
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = '#ff00ff';
   ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+  ctx.shadowBlur = 0;
 }
 
 function drawBalls() {
   balls.forEach(ball => {
-    ball.angle += 0.05;
+    // Glow effect for balls
+    const gradient = ctx.createRadialGradient(
+      ball.x, ball.y, ball.radius / 3,
+      ball.x, ball.y, ball.radius
+    );
+    gradient.addColorStop(0, '#0ff');
+    gradient.addColorStop(1, 'rgba(0,255,255,0)');
+    ctx.fillStyle = gradient;
+    ctx.shadowColor = '#0ff';
+    ctx.shadowBlur = 15;
     ctx.beginPath();
-    ctx.fillStyle = '#00ffe7';
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     ctx.fill();
+    ctx.shadowBlur = 0;
   });
 }
 
@@ -238,7 +301,7 @@ toggleMusicBtn.addEventListener('click', () => {
   }
 });
 
-// Bắt đầu
+// Start game
 resetGame();
 </script>
 
