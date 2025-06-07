@@ -1,115 +1,177 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Mê Cung Đơn Giản</title>
-<style>
-  body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background: #222;
-    color: #eee;
-    font-family: Arial, sans-serif;
-  }
-  #maze {
-    display: grid;
-    grid-template-columns: repeat(10, 40px);
-    grid-template-rows: repeat(10, 40px);
-    gap: 2px;
-    background: #111;
-  }
-  .cell {
-    width: 40px;
-    height: 40px;
-    background: #444;
-    box-sizing: border-box;
-  }
-  .wall {
-    background: #222;
-  }
-  .start {
-    background: #4CAF50;
-  }
-  .end {
-    background: #f44336;
-  }
-  .player {
-    background: #2196F3;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Maze Auto Play</title>
+  <style>
+    body { background: #111; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    canvas { border: 2px solid #eee; background: #222; }
+  </style>
 </head>
 <body>
-
-<div id="maze"></div>
-
+<canvas id="maze" width="600" height="600"></canvas>
 <script>
-  // Mảng mê cung: 0 = đường đi, 1 = tường
-  // Kích thước 10x10
-  const mazeMap = [
-    [1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,1,0,0,0,0,1],
-    [1,0,1,0,1,0,1,1,0,1],
-    [1,0,1,0,0,0,0,1,0,1],
-    [1,0,1,1,1,1,0,1,0,1],
-    [1,0,0,0,0,1,0,1,0,1],
-    [1,1,1,1,0,1,0,1,0,1],
-    [1,0,0,1,0,0,0,1,0,1],
-    [1,0,0,0,0,1,0,0,0,1],
-    [1,1,1,1,1,1,1,1,1,1],
-  ];
+const canvas = document.getElementById('maze');
+const ctx = canvas.getContext('2d');
+const cols = 20, rows = 20;
+const cellSize = canvas.width / cols;
 
-  const mazeElement = document.getElementById('maze');
+class Cell {
+  constructor(x, y) {
+    this.x = x; this.y = y;
+    this.walls = [true, true, true, true];
+    this.visited = false;
+  }
 
-  let playerPos = {x: 1, y: 1}; // Điểm bắt đầu
-  const endPos = {x: 8, y: 8};  // Điểm kết thúc
+  draw() {
+    const x = this.x * cellSize;
+    const y = this.y * cellSize;
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2;
 
-  function drawMaze() {
-    mazeElement.innerHTML = '';
-    for(let y=0; y<10; y++) {
-      for(let x=0; x<10; x++) {
-        const cell = document.createElement('div');
-        cell.classList.add('cell');
-        if(mazeMap[y][x] === 1) cell.classList.add('wall');
-        if(x === playerPos.x && y === playerPos.y) cell.classList.add('player');
-        if(x === 1 && y === 1) cell.classList.add('start');
-        if(x === endPos.x && y === endPos.y) cell.classList.add('end');
-        mazeElement.appendChild(cell);
+    if (this.walls[0]) drawLine(x, y, x + cellSize, y);
+    if (this.walls[1]) drawLine(x + cellSize, y, x + cellSize, y + cellSize);
+    if (this.walls[2]) drawLine(x + cellSize, y + cellSize, x, y + cellSize);
+    if (this.walls[3]) drawLine(x, y + cellSize, x, y);
+
+    if (this.visited) {
+      ctx.fillStyle = "#333";
+      ctx.fillRect(x, y, cellSize, cellSize);
+    }
+  }
+}
+
+function drawLine(x1, y1, x2, y2) {
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+}
+
+const grid = [], stack = [];
+for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) grid.push(new Cell(x, y));
+function index(x, y) {
+  if (x < 0 || y < 0 || x >= cols || y >= rows) return -1;
+  return x + y * cols;
+}
+
+function removeWalls(a, b) {
+  const dx = a.x - b.x, dy = a.y - b.y;
+  if (dx === 1) { a.walls[3] = b.walls[1] = false; }
+  else if (dx === -1) { a.walls[1] = b.walls[3] = false; }
+  if (dy === 1) { a.walls[0] = b.walls[2] = false; }
+  else if (dy === -1) { a.walls[2] = b.walls[0] = false; }
+}
+
+let current = grid[0];
+function generateStep() {
+  current.visited = true;
+  const neighbors = getUnvisitedNeighbors(current);
+  if (neighbors.length > 0) {
+    const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+    stack.push(current);
+    removeWalls(current, next);
+    current = next;
+  } else if (stack.length > 0) current = stack.pop();
+  draw();
+  if (stack.length > 0) requestAnimationFrame(generateStep);
+}
+
+function getUnvisitedNeighbors(cell) {
+  const {x, y} = cell;
+  const neighbors = [];
+  const top = grid[index(x, y - 1)];
+  const right = grid[index(x + 1, y)];
+  const bottom = grid[index(x, y + 1)];
+  const left = grid[index(x - 1, y)];
+  if (top && !top.visited) neighbors.push(top);
+  if (right && !right.visited) neighbors.push(right);
+  if (bottom && !bottom.visited) neighbors.push(bottom);
+  if (left && !left.visited) neighbors.push(left);
+  return neighbors;
+}
+
+let player = { x: 0, y: 0 };
+const goal = { x: cols - 1, y: rows - 1 };
+
+function drawPlayer() {
+  ctx.fillStyle = 'lime';
+  ctx.fillRect(player.x * cellSize + 5, player.y * cellSize + 5, cellSize - 10, cellSize - 10);
+  ctx.fillStyle = 'red';
+  ctx.fillRect(goal.x * cellSize + 8, goal.y * cellSize + 8, cellSize - 16, cellSize - 16);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  grid.forEach(c => c.draw());
+  drawPlayer();
+}
+
+function movePlayerAuto(path) {
+  if (!path || path.length === 0) return;
+  const next = path.shift();
+  player.x = next.x;
+  player.y = next.y;
+  draw();
+  if (player.x === goal.x && player.y === goal.y) {
+    setTimeout(() => alert("🎉 AI đã thắng!"), 100);
+  } else {
+    setTimeout(() => movePlayerAuto(path), 100);
+  }
+}
+
+// BFS để tìm đường
+function findPathBFS(start, end) {
+  const queue = [start];
+  const visited = new Set();
+  const cameFrom = {};
+  const key = (x, y) => `${x},${y}`;
+  visited.add(key(start.x, start.y));
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (current.x === end.x && current.y === end.y) {
+      // Xây dựng lại đường đi
+      const path = [];
+      let c = key(end.x, end.y);
+      while (c !== key(start.x, start.y)) {
+        const [cx, cy] = c.split(',').map(Number);
+        path.unshift({x: cx, y: cy});
+        c = cameFrom[c];
+      }
+      return path;
+    }
+
+    const i = index(current.x, current.y);
+    const cell = grid[i];
+    const dirs = [
+      {dx: 0, dy: -1, wall: 0},
+      {dx: 1, dy: 0, wall: 1},
+      {dx: 0, dy: 1, wall: 2},
+      {dx: -1, dy: 0, wall: 3}
+    ];
+
+    for (let d of dirs) {
+      if (!cell.walls[d.wall]) {
+        const nx = current.x + d.dx, ny = current.y + d.dy;
+        const nk = key(nx, ny);
+        if (!visited.has(nk)) {
+          visited.add(nk);
+          cameFrom[nk] = key(current.x, current.y);
+          queue.push({x: nx, y: ny});
+        }
       }
     }
   }
+  return null;
+}
 
-  function movePlayer(dx, dy) {
-    const newX = playerPos.x + dx;
-    const newY = playerPos.y + dy;
-    // Kiểm tra nếu vị trí mới không phải tường và trong giới hạn
-    if(newX >= 0 && newX < 10 && newY >= 0 && newY < 10 && mazeMap[newY][newX] === 0) {
-      playerPos.x = newX;
-      playerPos.y = newY;
-      drawMaze();
-      checkWin();
-    }
+// Kích hoạt tự chơi bằng phím A
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'a' || e.key === 'A') {
+    const path = findPathBFS(player, goal);
+    if (path) movePlayerAuto(path);
   }
+});
 
-  function checkWin() {
-    if(playerPos.x === endPos.x && playerPos.y === endPos.y) {
-      setTimeout(() => alert('Bạn đã thắng!'), 100);
-    }
-  }
-
-  window.addEventListener('keydown', (e) => {
-    switch(e.key) {
-      case 'ArrowUp': movePlayer(0, -1); break;
-      case 'ArrowDown': movePlayer(0, 1); break;
-      case 'ArrowLeft': movePlayer(-1, 0); break;
-      case 'ArrowRight': movePlayer(1, 0); break;
-    }
-  });
-
-  drawMaze();
+generateStep(); // bắt đầu sinh mê cung
 </script>
-
 </body>
 </html>
