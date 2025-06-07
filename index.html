@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Game Bóng Nảy + Nhạc Nền</title>
+  <title>Bóng Nảy - Có Nhạc + Tăng Bóng</title>
   <style>
     body {
       margin: 0;
@@ -103,6 +103,7 @@ let score = 0;
 let highScore = localStorage.getItem('highScore') || 0;
 let isGameOver = false;
 let musicStarted = false;
+let lastAddedBallScore = 0;
 
 function createBall() {
   return {
@@ -118,6 +119,7 @@ function createBall() {
 function resetGame() {
   balls = [createBall()];
   score = 0;
+  lastAddedBallScore = 0;
   isGameOver = false;
   paddle.x = (canvas.width - paddle.width) / 2;
   updateScore();
@@ -189,8 +191,9 @@ function update() {
       ball.dx *= 1.02;
       ball.dy *= 1.02;
 
-      if (score % 20 === 0) {
+      if (score - lastAddedBallScore >= 20) {
         balls.push(createBall());
+        lastAddedBallScore = score;
       }
     }
 
@@ -211,7 +214,7 @@ function gameOver() {
 
 document.addEventListener('keydown', (e) => {
   if (!musicStarted) {
-    bgMusic.play().catch(() => {}); // Bắt đầu nhạc khi người chơi tương tác
+    bgMusic.play().catch(() => {});
     musicStarted = true;
   }
   if (e.key === 'ArrowLeft') paddle.dx = -paddle.speed;
