@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Mê Cung Có Bẫy & Quái Vật</title>
+<title>Mê Cung Có Bẫy & Quái Vật - AI nâng cao</title>
 <style>
   body {
     margin: 0;
@@ -23,12 +23,17 @@
     font-size: 18px;
     margin-top: 8px;
   }
+  #status {
+    margin-top: 5px;
+    font-size: 16px;
+  }
 </style>
 </head>
 <body>
 
-<h1>Mê Cung Có Bẫy & Quái Vật</h1>
+<h1>Mê Cung Có Bẫy & Quái Vật - AI nâng cao</h1>
 <div id="lives">Mạng sống: 3</div>
+<div id="status">AI: Tắt</div>
 <canvas id="maze" width="600" height="600"></canvas>
 
 <script>
@@ -141,9 +146,13 @@ const goal = { x: cols - 1, y: rows - 1 };
 
 let lives = 3;
 const livesDiv = document.getElementById("lives");
+const statusDiv = document.getElementById("status");
 
 let traps = []; // mảng chứa bẫy {x, y}
 let monsters = []; // mảng chứa quái vật {x, y, dirX, dirY}
+
+let aiActive = false;
+let aiPath = [];
 
 function drawPlayerSmooth() {
   ctx.fillStyle = "lime";
@@ -188,7 +197,7 @@ function draw() {
   drawPlayerSmooth();
 }
 
-function findPathBFS(start, end) {
+function findPathBFS(start, end, avoidPositions = []) {
   const queue = [start];
   const visited = new Set();
   const cameFrom = {};
@@ -219,7 +228,10 @@ function findPathBFS(start, end) {
         const nx = curr.x + dx,
           ny = curr.y + dy,
           k = key(nx, ny);
-        if (!visited.has(k)) {
+
+        // Tránh các vị trí bẫy/quái vật (avoidPositions)
+        const blocked = avoidPositions.some(pos => pos.x === nx && pos.y === ny);
+        if (!visited.has(k) && !blocked) {
           visited.add(k);
           cameFrom[k] = key(curr.x, curr.y);
           queue.push({ x: nx, y: ny });
@@ -231,7 +243,11 @@ function findPathBFS(start, end) {
 }
 
 function movePlayerAutoSmooth(path) {
-  if (!path || path.length === 0) return;
+  if (!path || path.length === 0) {
+    aiActive = false;
+    statusDiv.textContent = "AI: Tắt";
+    return;
+  }
   const next = path.shift();
   const startX = player.x * cellSize;
   const startY = player.y * cellSize;
@@ -241,6 +257,7 @@ function movePlayerAutoSmooth(path) {
     startTime = performance.now();
 
   function animate(t) {
+    if (!aiActive) return; // Nếu AI tắt, dừng luôn
     const elapsed = t - startTime;
     const progress = Math.min(elapsed / duration, 1);
     drawX = startX + (endX - startX) * progress;
@@ -254,9 +271,20 @@ function movePlayerAutoSmooth(path) {
       checkTrapCollision();
       checkMonsterCollision();
       if (player.x === goal.x && player.y === goal.y) {
-        setTimeout(() => alert("🎉 AI đã chiến thắng!"), 100);
+        alert("🎉 AI đã chiến thắng!");
+        aiActive = false;
+        statusDiv.textContent = "AI: Tắt";
       } else {
-        setTimeout(() => movePlayerAutoSmooth(path), 50);
+        // AI tính đường mới tránh bẫy và quái vật hiện tại
+        const avoid = traps.concat(monsters);
+        const newPath = findPathBFS(player, goal, avoid);
+        if (newPath) {
+          movePlayerAutoSmooth(newPath);
+        } else {
+          alert("AI không tìm được đường đi!");
+          aiActive = false;
+          statusDiv.textContent = "AI: Tắt";
+        }
       }
     }
   }
@@ -264,23 +292,25 @@ function movePlayerAutoSmooth(path) {
 }
 
 function manualMove(dx, dy) {
-  const nx = player.x + dx;
-  const ny = player.y + dy;
-  const i = index(player.x, player.y);
-  const ni = index(nx, ny);
-  if (ni === -1) return;
-  const cell = grid[i];
-  const dir = dx === 1 ? 1 : dx === -1 ? 3 : dy === 1 ? 2 : 0;
-  if (!cell.walls[dir]) {
-    player.x = nx;
-    player.y = ny;
-    drawX = nx * cellSize;
-    drawY = ny * cellSize;
+  if (aiActive) return; // Nếu AI đang chạy thì không cho di chuyển thủ công
+  const cx = player.x;
+  const cy = player.y;
+  const cell = grid[index(cx, cy)];
+  let wallIndex = -1;
+  if (dx === 1 && dy === 0) wallIndex = 1;
+  else if (dx === -1 && dy === 0) wallIndex = 3;
+  else if (dx === 0 && dy === 1) wallIndex = 2;
+  else if (dx === 0 && dy === -1) wallIndex = 0;
+  if (wallIndex !== -1 && !cell.walls[wallIndex]) {
+    player.x += dx;
+    player.y += dy;
+    drawX = player.x * cellSize;
+    drawY = player.y * cellSize;
     checkTrapCollision();
     checkMonsterCollision();
-    draw();
-    if (player.x === goal.x && player.y === goal.y)
+    if (player.x === goal.x && player.y === goal.y) {
       setTimeout(() => alert("🎉 Bạn đã chiến thắng!"), 100);
+    }
   }
 }
 
@@ -320,7 +350,6 @@ function placeTraps() {
   while (traps.length < maxTraps) {
     const x = Math.floor(Math.random() * cols);
     const y = Math.floor(Math.random() * rows);
-    // Không đặt bẫy ở vị trí start, goal, hoặc trùng bẫy
     if (
       (x === 0 && y === 0) ||
       (x === goal.x && y === goal.y) ||
@@ -349,18 +378,19 @@ function placeMonsters() {
   }
 }
 
+let monsterMoveCounter = 0;
 function moveMonsters() {
+  // Quái vật di chuyển chậm: mỗi 20 khung mới di chuyển 1 bước
+  monsterMoveCounter++;
+  if (monsterMoveCounter < 20) return;
+  monsterMoveCounter = 0;
+
   monsters.forEach((m) => {
-    // Quái vật di chuyển theo hướng dirX, dirY nếu có đường đi
     const cx = m.x;
     const cy = m.y;
-    const cell = grid[index(cx, cy)];
-
-    // Kiểm tra hướng di chuyển
     let nx = cx + m.dirX;
     let ny = cy + m.dirY;
 
-    // Tính hướng ngược lại nếu bị tường
     if (
       nx < 0 ||
       ny < 0 ||
@@ -376,13 +406,9 @@ function moveMonsters() {
       ny = cy + m.dirY;
     }
 
-    // Di chuyển quái vật nếu đường không có tường
-    const fromCell = grid[index(cx, cy)];
-    const toCell = grid[index(nx, ny)];
-
-    // Kiểm tra tường giữa 2 cell
+    // Kiểm tra tường giữa 2 ô
     const wallIndex = m.dirX === 1 ? 1 : m.dirX === -1 ? 3 : m.dirY === 1 ? 2 : 0;
-    if (!fromCell.walls[wallIndex]) {
+    if (!grid[index(cx, cy)].walls[wallIndex]) {
       m.x = nx;
       m.y = ny;
     } else {
@@ -391,7 +417,6 @@ function moveMonsters() {
     }
   });
 
-  // Nếu quái vật chạm người chơi thì thua
   if (monsters.some((m) => m.x === player.x && m.y === player.y)) {
     alert("👹 Quái vật bắt bạn! Thua cuộc.");
     resetGame();
@@ -405,7 +430,6 @@ function gameLoop() {
 }
 
 function generateMaze() {
-  // Reset maze
   grid.forEach((c) => (c.visited = false));
   stack.length = 0;
   current = grid[0];
@@ -424,9 +448,23 @@ window.addEventListener("keydown", (e) => {
   else if (e.key === "ArrowLeft") manualMove(-1, 0);
   else if (e.key === "ArrowRight") manualMove(1, 0);
   else if (e.key.toLowerCase() === "a") {
-    // AI tự chạy
-    const path = findPathBFS(player, goal);
-    if (path) movePlayerAutoSmooth(path);
+    if (!aiActive) {
+      aiActive = true;
+      statusDiv.textContent = "AI: Bật";
+      // Tính đường tránh bẫy và quái vật
+      const avoid = traps.concat(monsters);
+      const path = findPathBFS(player, goal, avoid);
+      if (path) movePlayerAutoSmooth(path);
+      else {
+        alert("AI không tìm được đường đi!");
+        aiActive = false;
+        statusDiv.textContent = "AI: Tắt";
+      }
+    }
+  } else if (e.key.toLowerCase() === "t") {
+    // Tắt AI
+    aiActive = false;
+    statusDiv.textContent = "AI: Tắt";
   }
 });
 
