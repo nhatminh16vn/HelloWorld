@@ -16,16 +16,15 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// Camera
 let cam = { x: 0, y: 0 };
 
-// Player (world coords)
 let player = { x: 150, y: 150, size: 20, speed: 4, hp: 3 };
 
-// Enemy
-let enemy = { x: 700, y: 400, size: 25, speed: 2.2, lives: 5 };
+// Multiple enemies
+let enemies = [
+  { x: 700, y: 400, size: 25, speed: 2.2, lives: 5 }
+];
 
-// Infinite map storage
 let walls = [];
 let generatedChunks = new Set();
 const CHUNK_SIZE = 600;
@@ -43,11 +42,25 @@ function generateChunk(cx, cy) {
   let baseX = cx * CHUNK_SIZE;
   let baseY = cy * CHUNK_SIZE;
 
-  // Outer room
-  walls.push({x:baseX+50,y:baseY+50,w:500,h:20});
+  // Outer room WITH REAL DOORS (gaps)
+  // Top wall split (door gap in middle)
+  walls.push({x:baseX+50,y:baseY+50,w:180,h:20});
+  walls.push({x:baseX+330,y:baseY+50,w:220,h:20});
+
+  // Left wall
   walls.push({x:baseX+50,y:baseY+50,w:20,h:500});
-  walls.push({x:baseX+50,y:baseY+530,w:500,h:20});
-  walls.push({x:baseX+530,y:baseY+50,w:20,h:500});
+
+  // Bottom wall split (door gap)
+  walls.push({x:baseX+50,y:baseY+530,w:180,h:20});
+  walls.push({x:baseX+330,y:baseY+530,w:220,h:20});
+
+  // Right wall split (door gap)
+  walls.push({x:baseX+530,y:baseY+50,w:20,h:200});
+  walls.push({x:baseX+530,y:baseY+350,w:20,h:200});
+
+  // ALWAYS create doors (fix trap)
+  // Top door gap
+  walls.push({x:baseX+250,y:baseY+50,w:100,h:20, door:true});
 
   // Random inner walls
   let seed = cx*999 + cy*777;
@@ -57,9 +70,19 @@ function generateChunk(cx, cy) {
   if (rand(seed+1) > 0.5) {
     walls.push({x:baseX+350,y:baseY+250,w:20,h:300});
   }
+
+  // Spawn enemy in new chunk
+  if (rand(seed+2) > 0.4) {
+    enemies.push({
+      x: baseX + 300,
+      y: baseY + 300,
+      size: 25,
+      speed: 2 + Math.random(),
+      lives: 3
+    });
+  }
 }
 
-// Objects
 let objects = [];
 
 let keys = {};
@@ -83,7 +106,8 @@ function spawnObject() {
   let worldMouseX = mouse.x + cam.x;
   let worldMouseY = mouse.y + cam.y;
 
-  let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
+  let angle = Math.atan2(worldMouseY - player.x, worldMouseX - player.y);
+
   let type = Math.random();
 
   if (type < 0.6) {
@@ -103,7 +127,6 @@ function collideRect(a,b) {
 }
 
 function update() {
-  // Generate nearby chunks
   let cx = Math.floor(player.x / CHUNK_SIZE);
   let cy = Math.floor(player.y / CHUNK_SIZE);
   for (let dx=-1; dx<=1; dx++) {
@@ -112,7 +135,6 @@ function update() {
     }
   }
 
-  // Movement
   let oldX = player.x, oldY = player.y;
   if (keys["ArrowUp"] || keys["w"]) player.y -= player.speed;
   if (keys["ArrowDown"] || keys["s"]) player.y += player.speed;
@@ -120,53 +142,53 @@ function update() {
   if (keys["ArrowRight"] || keys["d"]) player.x += player.speed;
 
   walls.forEach(w => {
-    if (collideRect(player,{...w,size:player.size})) {
+    if (!w.door && collideRect(player,{...w,size:player.size})) {
+      // Stop player cleanly
       player.x = oldX;
       player.y = oldY;
     }
   });
 
-  // Enemy AI
-  let dx = player.x - enemy.x;
-  let dy = player.y - enemy.y;
-  let dist = Math.hypot(dx,dy);
+  // Enemies
+  enemies.forEach((enemy,i) => {
+    let dx = player.x - enemy.x;
+    let dy = player.y - enemy.y;
+    let dist = Math.hypot(dx,dy);
 
-  let moveX = (dx/dist)*enemy.speed;
-  let moveY = (dy/dist)*enemy.speed;
+    let moveX = dist === 0 ? 0 : (dx/dist)*enemy.speed;
+    let moveY = dist === 0 ? 0 : (dy/dist)*enemy.speed;
 
-  let oldEX = enemy.x, oldEY = enemy.y;
-  enemy.x += moveX;
-  enemy.y += moveY;
+    let oldEX = enemy.x, oldEY = enemy.y;
+    enemy.x += moveX;
+    enemy.y += moveY;
 
-  walls.forEach(w => {
-    if (collideRect(enemy,{...w,size:enemy.size})) {
-      enemy.x = oldEX + (Math.random()-0.5)*20;
-      enemy.y = oldEY + (Math.random()-0.5)*20;
+    walls.forEach(w => {
+      if (!w.door && collideRect(enemy,{...w,size:enemy.size})) {
+        // Proper collision: revert instead of random teleport
+        enemy.x = oldEX;
+        enemy.y = oldEY;
+      }
+    });
+
+    if (Math.hypot(player.x-enemy.x, player.y-enemy.y) < player.size+enemy.size) {
+      player.hp--;
+      player.x += 50;
+      player.y += 50;
     }
+
+    objects.forEach((obj,j) => {
+      if (Math.hypot(obj.x-enemy.x, obj.y-enemy.y) < obj.size+enemy.size) {
+        enemy.lives--;
+        objects.splice(j,1);
+      }
+    });
+
+    if (enemy.lives <= 0) enemies.splice(i,1);
   });
 
-  if (Math.hypot(player.x-enemy.x, player.y-enemy.y) < player.size+enemy.size) {
-    player.hp--;
-    player.x += 50;
-    player.y += 50;
-  }
-
-  objects.forEach((obj,i) => {
+  objects.forEach(obj => {
     obj.x += obj.dx;
     obj.y += obj.dy;
-
-    if (Math.hypot(obj.x-enemy.x, obj.y-enemy.y) < obj.size+enemy.size) {
-      enemy.lives--;
-
-      if (obj.spawn) {
-        for (let j=0;j<3;j++) {
-          let a = Math.random()*Math.PI*2;
-          objects.push({x:obj.x,y:obj.y,size:6,dx:Math.cos(a)*4,dy:Math.sin(a)*4,spawn:false});
-        }
-      }
-
-      objects.splice(i,1);
-    }
   });
 
   cam.x = player.x - canvas.width/2;
@@ -176,40 +198,32 @@ function update() {
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // Draw walls (with camera offset)
   ctx.fillStyle = "#555";
   walls.forEach(w => {
-    ctx.fillRect(w.x - cam.x, w.y - cam.y, w.w, w.h);
+    if (!w.door) ctx.fillRect(w.x - cam.x, w.y - cam.y, w.w, w.h);
   });
 
-  // Player
   ctx.fillStyle = "cyan";
   ctx.fillRect(player.x - cam.x, player.y - cam.y, player.size, player.size);
 
-  // Enemy
   ctx.fillStyle = "red";
-  ctx.fillRect(enemy.x - cam.x, enemy.y - cam.y, enemy.size, enemy.size);
+  enemies.forEach(enemy => {
+    ctx.fillRect(enemy.x - cam.x, enemy.y - cam.y, enemy.size, enemy.size);
+  });
 
-  // Objects
   ctx.fillStyle = "yellow";
   objects.forEach(o => {
     ctx.fillRect(o.x - cam.x, o.y - cam.y, o.size, o.size);
   });
 
-  // UI
   ctx.fillStyle = "white";
-  ctx.fillText("Enemy Lives: "+enemy.lives,20,30);
+  ctx.fillText("Enemies: "+enemies.length,20,30);
   ctx.fillText("Player HP: "+player.hp,20,55);
 }
 
 function loop() {
   update();
   draw();
-
-  if (enemy.lives <= 0) {
-    alert("You win!");
-    return;
-  }
 
   if (player.hp <= 0) {
     alert("You lose!");
