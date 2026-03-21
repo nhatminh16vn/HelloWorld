@@ -1,100 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Squid Game - Boss Mode</title>
-  <style>
-    body {
-      background: #111;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-    }
-    #gameArea {
-      margin: 20px auto;
-      width: 600px;
-      height: 400px;
-      background: #222;
-      border: 3px solid #fff;
-      position: relative;
-    }
-    .player {
-      width: 20px;
-      height: 20px;
-      background: lime;
-      position: absolute;
-      border-radius: 50%;
-    }
-    .eliminated {
-      background: red !important;
-    }
-    #controls button {
-      margin: 5px;
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background: #444;
-      color: #fff;
-    }
-    #controls button:hover {
-      background: #666;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Chase Game Advanced</title>
+<style>
+  body { margin: 0; overflow: hidden; background: #111; }
+  canvas { display: block; background: #222; }
+</style>
 </head>
 <body>
-  <h1>🦑 Squid Game - You Are The Boss</h1>
-  <div id="gameArea"></div>
-  <div id="controls">
-    <button onclick="addPlayer()">➕ Add Player</button>
-    <button onclick="removePlayer()">➖ Remove Player</button>
-    <button onclick="decideWinner()">👑 Decide Winner</button>
-    <button onclick="eliminateRandom()">💀 Eliminate Random</button>
-  </div>
-  <h2 id="status">Waiting for your command...</h2>
+<canvas id="game"></canvas>
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-  <script>
-    const gameArea = document.getElementById("gameArea");
-    const statusText = document.getElementById("status");
-    let players = [];
-    let playerId = 0;
+// Player
+let player = { x: 100, y: 100, size: 20, speed: 4, hp: 3 };
 
-    function addPlayer() {
-      const player = document.createElement("div");
-      player.className = "player";
-      player.style.left = Math.random() * 580 + "px";
-      player.style.top = Math.random() * 380 + "px";
-      player.dataset.id = playerId++;
-      gameArea.appendChild(player);
-      players.push(player);
-      statusText.textContent = `Player ${player.dataset.id} joined.`;
+// Enemy smarter AI
+let enemy = { x: 500, y: 300, size: 25, speed: 2.2, lives: 5 };
+
+// Obstacles
+let walls = [
+  {x:300,y:200,w:200,h:20},
+  {x:600,y:400,w:20,h:200},
+  {x:200,y:450,w:150,h:20}
+];
+
+// Objects
+let objects = [];
+
+let keys = {};
+let mouse = {x:0,y:0};
+
+document.addEventListener("mousemove", e => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
+document.addEventListener("keydown", e => {
+  if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
+  keys[e.key] = true;
+});
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+// Spawn object types
+function spawnObject() {
+  if (objects.length >= 1) return;
+
+  let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+
+  let type = Math.random();
+
+  // Normal shot
+  if (type < 0.6) {
+    objects.push({x:player.x,y:player.y,size:8,dx:Math.cos(angle)*6,dy:Math.sin(angle)*6,spawn:false});
+  }
+  // Split shot (spawns more)
+  else {
+    objects.push({x:player.x,y:player.y,size:10,dx:Math.cos(angle)*4,dy:Math.sin(angle)*4,spawn:true});
+  }
+}
+
+document.addEventListener("click", spawnObject);
+
+function collideRect(a,b) {
+  return a.x < b.x + b.w &&
+         a.x + a.size > b.x &&
+         a.y < b.y + b.h &&
+         a.y + a.size > b.y;
+}
+
+function update() {
+  // Player movement (Arrow keys + WASD)
+  let oldX = player.x, oldY = player.y;
+  if (keys["ArrowUp"] || keys["w"]) player.y -= player.speed;
+  if (keys["ArrowDown"] || keys["s"]) player.y += player.speed;
+  if (keys["ArrowLeft"] || keys["a"]) player.x -= player.speed;
+  if (keys["ArrowRight"] || keys["d"]) player.x += player.speed;
+
+  // Wall collision
+  walls.forEach(w => {
+    if (collideRect(player,{...w,size:player.size})) {
+      player.x = oldX;
+      player.y = oldY;
     }
+  });
 
-    function removePlayer() {
-      if (players.length === 0) return;
-      const player = players.pop();
-      gameArea.removeChild(player);
-      statusText.textContent = `Player ${player.dataset.id} removed.`;
+  // Smarter enemy: avoids walls slightly
+  let dx = player.x - enemy.x;
+  let dy = player.y - enemy.y;
+  let dist = Math.hypot(dx,dy);
+
+  let moveX = (dx/dist)*enemy.speed;
+  let moveY = (dy/dist)*enemy.speed;
+
+  let oldEX = enemy.x, oldEY = enemy.y;
+  enemy.x += moveX;
+  enemy.y += moveY;
+
+  walls.forEach(w => {
+    if (collideRect(enemy,{...w,size:enemy.size})) {
+      enemy.x = oldEX + (Math.random()-0.5)*10;
+      enemy.y = oldEY + (Math.random()-0.5)*10;
     }
+  });
 
-    function decideWinner() {
-      if (players.length === 0) {
-        statusText.textContent = "No players left!";
-        return;
+  // Enemy hits player
+  if (Math.hypot(player.x-enemy.x, player.y-enemy.y) < player.size+enemy.size) {
+    player.hp--;
+    player.x = 100;
+    player.y = 100;
+  }
+
+  // Objects
+  objects.forEach((obj,i) => {
+    obj.x += obj.dx;
+    obj.y += obj.dy;
+
+    // Hit enemy
+    if (Math.hypot(obj.x-enemy.x, obj.y-enemy.y) < obj.size+enemy.size) {
+      enemy.lives--;
+
+      // Spawn extra bullets if special
+      if (obj.spawn) {
+        for (let i=0;i<3;i++) {
+          let a = Math.random()*Math.PI*2;
+          objects.push({x:obj.x,y:obj.y,size:6,dx:Math.cos(a)*4,dy:Math.sin(a)*4,spawn:false});
+        }
       }
-      players.forEach(p => p.classList.add("eliminated"));
-      const winner = players[Math.floor(Math.random() * players.length)];
-      winner.classList.remove("eliminated");
-      winner.style.background = "gold";
-      statusText.textContent = `🏆 Player ${winner.dataset.id} is the WINNER!`;
-    }
 
-    function eliminateRandom() {
-      if (players.length === 0) return;
-      const unlucky = players[Math.floor(Math.random() * players.length)];
-      unlucky.classList.add("eliminated");
-      statusText.textContent = `💀 Player ${unlucky.dataset.id} eliminated.`;
+      objects.splice(i,1);
     }
-  </script>
+  });
+
+  // Cleanup
+  objects = objects.filter(o => o.x>0 && o.x<canvas.width && o.y>0 && o.y<canvas.height);
+}
+
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Walls
+  ctx.fillStyle = "gray";
+  walls.forEach(w => ctx.fillRect(w.x,w.y,w.w,w.h));
+
+  // Player
+  ctx.fillStyle = "cyan";
+  ctx.fillRect(player.x,player.y,player.size,player.size);
+
+  // Enemy
+  ctx.fillStyle = "red";
+  ctx.fillRect(enemy.x,enemy.y,enemy.size,enemy.size);
+
+  // Objects
+  ctx.fillStyle = "yellow";
+  objects.forEach(o => ctx.fillRect(o.x,o.y,o.size,o.size));
+
+  // UI
+  ctx.fillStyle = "white";
+  ctx.font = "18px Arial";
+  ctx.fillText("Enemy Lives: "+enemy.lives,20,30);
+  ctx.fillText("Player HP: "+player.hp,20,55);
+}
+
+function loop() {
+  update();
+  draw();
+
+  if (enemy.lives <= 0) {
+    alert("You win!");
+    return;
+  }
+
+  if (player.hp <= 0) {
+    alert("You lose!");
+    return;
+  }
+
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
 </body>
 </html>
