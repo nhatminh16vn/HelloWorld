@@ -1,239 +1,197 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Chase Game - Infinite House</title>
-<style>
-  body { margin: 0; overflow: hidden; background: #111; }
-  canvas { display: block; background: #1a1a1a; }
-</style>
+  <title>Baldi PRO</title>
+  <style>
+    body { margin:0; overflow:hidden; }
+    canvas { display:block; background:#111; }
+  </style>
 </head>
 <body>
+
 <canvas id="game"></canvas>
+
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-let cam = { x: 0, y: 0 };
+// ===== PLAYER =====
+let player = { x:2, y:2, angle:0, stamina:100 };
 
-let player = { x: 150, y: 150, size: 20, speed: 4, hp: 3 };
+// ===== MAP (RANDOM GENERATOR) =====
+let mapSize = 10;
+let map = [];
 
-// Multiple enemies
-let enemies = [
-  { x: 700, y: 400, size: 25, speed: 2.2, lives: 5 }
-];
-
-let walls = [];
-let generatedChunks = new Set();
-const CHUNK_SIZE = 600;
-
-function rand(seed) {
-  let x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
+for (let y=0;y<mapSize;y++){
+  let row=[];
+  for (let x=0;x<mapSize;x++){
+    if (Math.random()<0.2 || x==0||y==0||x==mapSize-1||y==mapSize-1){
+      row.push(1); // wall
+    } else {
+      row.push(0); // empty
+    }
+  }
+  map.push(row);
 }
 
-function generateChunk(cx, cy) {
-  let key = cx + "," + cy;
-  if (generatedChunks.has(key)) return;
-  generatedChunks.add(key);
+// place notebook + exit
+map[8][8]=2; // notebook
+map[1][8]=3; // exit
 
-  let baseX = cx * CHUNK_SIZE;
-  let baseY = cy * CHUNK_SIZE;
+// ===== ENEMIES =====
+let baldi = {x:7,y:7};
+let principal = {x:5,y:5, anger:0};
 
-  // Outer room WITH REAL DOORS (gaps)
-  // Top wall split (door gap in middle)
-  walls.push({x:baseX+50,y:baseY+50,w:180,h:20});
-  walls.push({x:baseX+330,y:baseY+50,w:220,h:20});
+// ===== CONTROLS =====
+let keys={};
+document.addEventListener("keydown",e=>keys[e.key]=true);
+document.addEventListener("keyup",e=>keys[e.key]=false);
 
-  // Left wall
-  walls.push({x:baseX+50,y:baseY+50,w:20,h:500});
-
-  // Bottom wall split (door gap)
-  walls.push({x:baseX+50,y:baseY+530,w:180,h:20});
-  walls.push({x:baseX+330,y:baseY+530,w:220,h:20});
-
-  // Right wall split (door gap)
-  walls.push({x:baseX+530,y:baseY+50,w:20,h:200});
-  walls.push({x:baseX+530,y:baseY+350,w:20,h:200});
-
-  // ALWAYS create doors (fix trap)
-  // Top door gap
-  walls.push({x:baseX+250,y:baseY+50,w:100,h:20, door:true});
-
-  // Random inner walls
-  let seed = cx*999 + cy*777;
-  if (rand(seed) > 0.5) {
-    walls.push({x:baseX+200,y:baseY+50,w:20,h:300});
-  }
-  if (rand(seed+1) > 0.5) {
-    walls.push({x:baseX+350,y:baseY+250,w:20,h:300});
-  }
-
-  // Spawn enemy in new chunk
-  if (rand(seed+2) > 0.4) {
-    enemies.push({
-      x: baseX + 300,
-      y: baseY + 300,
-      size: 25,
-      speed: 2 + Math.random(),
-      lives: 3
-    });
-  }
-}
-
-let objects = [];
-
-let keys = {};
-let mouse = {x:0,y:0};
-
-document.addEventListener("mousemove", e => {
-  mouse.x = e.clientX;
-  mouse.y = e.clientY;
-});
-
-document.addEventListener("keydown", e => {
-  if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
-  keys[e.key] = true;
-});
-
-document.addEventListener("keyup", e => keys[e.key] = false);
-
-function spawnObject() {
-  if (objects.length >= 1) return;
-
-  let worldMouseX = mouse.x + cam.x;
-  let worldMouseY = mouse.y + cam.y;
-
-  let angle = Math.atan2(worldMouseY - player.x, worldMouseX - player.y);
-
-  let type = Math.random();
-
-  if (type < 0.6) {
-    objects.push({x:player.x,y:player.y,size:8,dx:Math.cos(angle)*6,dy:Math.sin(angle)*6,spawn:false});
+// ===== MATH SYSTEM =====
+function askMath(){
+  let a = Math.floor(Math.random()*10);
+  let b = Math.floor(Math.random()*10);
+  let ans = prompt(a + " + " + b + " = ?");
+  if (parseInt(ans) === a+b){
+    alert("Correct!");
   } else {
-    objects.push({x:player.x,y:player.y,size:10,dx:Math.cos(angle)*4,dy:Math.sin(angle)*4,spawn:true});
+    alert("Wrong! Baldi is faster now!");
+    baldi.speed = 0.1 + Math.random()*0.2;
   }
 }
 
-document.addEventListener("click", spawnObject);
+// ===== MOVE =====
+function move(){
+  let speed = 0.05;
 
-function collideRect(a,b) {
-  return a.x < b.x + b.w &&
-         a.x + a.size > b.x &&
-         a.y < b.y + b.h &&
-         a.y + a.size > b.y;
-}
+  if (keys["Shift"] && player.stamina>0){
+    speed=0.1;
+    player.stamina-=0.5;
 
-function update() {
-  let cx = Math.floor(player.x / CHUNK_SIZE);
-  let cy = Math.floor(player.y / CHUNK_SIZE);
-  for (let dx=-1; dx<=1; dx++) {
-    for (let dy=-1; dy<=1; dy++) {
-      generateChunk(cx+dx, cy+dy);
-    }
+    // PRINCIPAL PUNISH
+    principal.anger += 0.05;
+  } else {
+    player.stamina+=0.2;
   }
 
-  let oldX = player.x, oldY = player.y;
-  if (keys["ArrowUp"] || keys["w"]) player.y -= player.speed;
-  if (keys["ArrowDown"] || keys["s"]) player.y += player.speed;
-  if (keys["ArrowLeft"] || keys["a"]) player.x -= player.speed;
-  if (keys["ArrowRight"] || keys["d"]) player.x += player.speed;
+  if (keys["ArrowLeft"]) player.angle -= 0.05;
+  if (keys["ArrowRight"]) player.angle += 0.05;
 
-  walls.forEach(w => {
-    if (!w.door && collideRect(player,{...w,size:player.size})) {
-      // Stop player cleanly
-      player.x = oldX;
-      player.y = oldY;
-    }
-  });
+  let nx = player.x;
+  let ny = player.y;
 
-  // Enemies
-  enemies.forEach((enemy,i) => {
-    let dx = player.x - enemy.x;
-    let dy = player.y - enemy.y;
-    let dist = Math.hypot(dx,dy);
+  if (keys["ArrowUp"]){
+    nx += Math.cos(player.angle)*speed;
+    ny += Math.sin(player.angle)*speed;
+  }
 
-    let moveX = dist === 0 ? 0 : (dx/dist)*enemy.speed;
-    let moveY = dist === 0 ? 0 : (dy/dist)*enemy.speed;
+  if (keys["ArrowDown"]){
+    nx -= Math.cos(player.angle)*speed;
+    ny -= Math.sin(player.angle)*speed;
+  }
 
-    let oldEX = enemy.x, oldEY = enemy.y;
-    enemy.x += moveX;
-    enemy.y += moveY;
+  if (map[Math.floor(ny)][Math.floor(nx)] !== 1){
+    player.x = nx;
+    player.y = ny;
+  }
+}
 
-    walls.forEach(w => {
-      if (!w.door && collideRect(enemy,{...w,size:enemy.size})) {
-        // Proper collision: revert instead of random teleport
-        enemy.x = oldEX;
-        enemy.y = oldEY;
+// ===== ENEMIES =====
+function updateEnemies(){
+  // BALDI CHASE
+  let dx = player.x - baldi.x;
+  let dy = player.y - baldi.y;
+  let dist = Math.hypot(dx,dy);
+
+  baldi.x += dx * 0.01;
+  baldi.y += dy * 0.01;
+
+  if (dist < 0.5){
+    alert("Baldi caught you!");
+    location.reload();
+  }
+
+  // PRINCIPAL
+  let pdx = player.x - principal.x;
+  let pdy = player.y - principal.y;
+
+  principal.x += pdx * 0.01;
+  principal.y += pdy * 0.01;
+
+  if (principal.anger > 3){
+    alert("No running in the halls!");
+    player.stamina = 0;
+    principal.anger = 0;
+  }
+}
+
+// ===== INTERACTIONS =====
+function checkTile(){
+  let tile = map[Math.floor(player.y)][Math.floor(player.x)];
+
+  if (tile === 2){
+    askMath();
+    map[Math.floor(player.y)][Math.floor(player.x)] = 0;
+  }
+
+  if (tile === 3){
+    alert("YOU ESCAPED SCHOOL!");
+    location.reload();
+  }
+}
+
+// ===== FAKE 3D (RAYCASTING) =====
+function draw3D(){
+  let rays = 120;
+
+  for (let i=0;i<rays;i++){
+    let angle = player.angle - 0.5 + (i/rays);
+
+    for (let d=0; d<10; d+=0.05){
+      let x = player.x + Math.cos(angle)*d;
+      let y = player.y + Math.sin(angle)*d;
+
+      if (map[Math.floor(y)][Math.floor(x)] === 1){
+        let height = 300/(d);
+        ctx.fillStyle="white";
+        ctx.fillRect(i*(canvas.width/rays),
+                     canvas.height/2-height/2,
+                     canvas.width/rays,
+                     height);
+        break;
       }
-    });
-
-    if (Math.hypot(player.x-enemy.x, player.y-enemy.y) < player.size+enemy.size) {
-      player.hp--;
-      player.x += 50;
-      player.y += 50;
     }
-
-    objects.forEach((obj,j) => {
-      if (Math.hypot(obj.x-enemy.x, obj.y-enemy.y) < obj.size+enemy.size) {
-        enemy.lives--;
-        objects.splice(j,1);
-      }
-    });
-
-    if (enemy.lives <= 0) enemies.splice(i,1);
-  });
-
-  objects.forEach(obj => {
-    obj.x += obj.dx;
-    obj.y += obj.dy;
-  });
-
-  cam.x = player.x - canvas.width/2;
-  cam.y = player.y - canvas.height/2;
-}
-
-function draw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  ctx.fillStyle = "#555";
-  walls.forEach(w => {
-    if (!w.door) ctx.fillRect(w.x - cam.x, w.y - cam.y, w.w, w.h);
-  });
-
-  ctx.fillStyle = "cyan";
-  ctx.fillRect(player.x - cam.x, player.y - cam.y, player.size, player.size);
-
-  ctx.fillStyle = "red";
-  enemies.forEach(enemy => {
-    ctx.fillRect(enemy.x - cam.x, enemy.y - cam.y, enemy.size, enemy.size);
-  });
-
-  ctx.fillStyle = "yellow";
-  objects.forEach(o => {
-    ctx.fillRect(o.x - cam.x, o.y - cam.y, o.size, o.size);
-  });
-
-  ctx.fillStyle = "white";
-  ctx.fillText("Enemies: "+enemies.length,20,30);
-  ctx.fillText("Player HP: "+player.hp,20,55);
-}
-
-function loop() {
-  update();
-  draw();
-
-  if (player.hp <= 0) {
-    alert("You lose!");
-    return;
   }
+}
+
+// ===== UI =====
+function drawUI(){
+  ctx.fillStyle="green";
+  ctx.fillRect(20,20,player.stamina*2,10);
+
+  ctx.fillStyle="white";
+  ctx.fillText("Stamina",20,50);
+}
+
+// ===== LOOP =====
+function loop(){
+  ctx.fillStyle="black";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  move();
+  updateEnemies();
+  checkTile();
+  draw3D();
+  drawUI();
 
   requestAnimationFrame(loop);
 }
 
 loop();
 </script>
+
 </body>
 </html>
