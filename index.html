@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Chase Game Advanced</title>
+<title>Chase Game - Infinite House</title>
 <style>
   body { margin: 0; overflow: hidden; background: #111; }
-  canvas { display: block; background: #222; }
+  canvas { display: block; background: #1a1a1a; }
 </style>
 </head>
 <body>
@@ -16,18 +16,48 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// Player
-let player = { x: 100, y: 100, size: 20, speed: 4, hp: 3 };
+// Camera
+let cam = { x: 0, y: 0 };
 
-// Enemy smarter AI
-let enemy = { x: 500, y: 300, size: 25, speed: 2.2, lives: 5 };
+// Player (world coords)
+let player = { x: 150, y: 150, size: 20, speed: 4, hp: 3 };
 
-// Obstacles
-let walls = [
-  {x:300,y:200,w:200,h:20},
-  {x:600,y:400,w:20,h:200},
-  {x:200,y:450,w:150,h:20}
-];
+// Enemy
+let enemy = { x: 700, y: 400, size: 25, speed: 2.2, lives: 5 };
+
+// Infinite map storage
+let walls = [];
+let generatedChunks = new Set();
+const CHUNK_SIZE = 600;
+
+function rand(seed) {
+  let x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+function generateChunk(cx, cy) {
+  let key = cx + "," + cy;
+  if (generatedChunks.has(key)) return;
+  generatedChunks.add(key);
+
+  let baseX = cx * CHUNK_SIZE;
+  let baseY = cy * CHUNK_SIZE;
+
+  // Outer room
+  walls.push({x:baseX+50,y:baseY+50,w:500,h:20});
+  walls.push({x:baseX+50,y:baseY+50,w:20,h:500});
+  walls.push({x:baseX+50,y:baseY+530,w:500,h:20});
+  walls.push({x:baseX+530,y:baseY+50,w:20,h:500});
+
+  // Random inner walls
+  let seed = cx*999 + cy*777;
+  if (rand(seed) > 0.5) {
+    walls.push({x:baseX+200,y:baseY+50,w:20,h:300});
+  }
+  if (rand(seed+1) > 0.5) {
+    walls.push({x:baseX+350,y:baseY+250,w:20,h:300});
+  }
+}
 
 // Objects
 let objects = [];
@@ -44,22 +74,21 @@ document.addEventListener("keydown", e => {
   if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
   keys[e.key] = true;
 });
+
 document.addEventListener("keyup", e => keys[e.key] = false);
 
-// Spawn object types
 function spawnObject() {
   if (objects.length >= 1) return;
 
-  let angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+  let worldMouseX = mouse.x + cam.x;
+  let worldMouseY = mouse.y + cam.y;
 
+  let angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
   let type = Math.random();
 
-  // Normal shot
   if (type < 0.6) {
     objects.push({x:player.x,y:player.y,size:8,dx:Math.cos(angle)*6,dy:Math.sin(angle)*6,spawn:false});
-  }
-  // Split shot (spawns more)
-  else {
+  } else {
     objects.push({x:player.x,y:player.y,size:10,dx:Math.cos(angle)*4,dy:Math.sin(angle)*4,spawn:true});
   }
 }
@@ -74,14 +103,22 @@ function collideRect(a,b) {
 }
 
 function update() {
-  // Player movement (Arrow keys + WASD)
+  // Generate nearby chunks
+  let cx = Math.floor(player.x / CHUNK_SIZE);
+  let cy = Math.floor(player.y / CHUNK_SIZE);
+  for (let dx=-1; dx<=1; dx++) {
+    for (let dy=-1; dy<=1; dy++) {
+      generateChunk(cx+dx, cy+dy);
+    }
+  }
+
+  // Movement
   let oldX = player.x, oldY = player.y;
   if (keys["ArrowUp"] || keys["w"]) player.y -= player.speed;
   if (keys["ArrowDown"] || keys["s"]) player.y += player.speed;
   if (keys["ArrowLeft"] || keys["a"]) player.x -= player.speed;
   if (keys["ArrowRight"] || keys["d"]) player.x += player.speed;
 
-  // Wall collision
   walls.forEach(w => {
     if (collideRect(player,{...w,size:player.size})) {
       player.x = oldX;
@@ -89,7 +126,7 @@ function update() {
     }
   });
 
-  // Smarter enemy: avoids walls slightly
+  // Enemy AI
   let dx = player.x - enemy.x;
   let dy = player.y - enemy.y;
   let dist = Math.hypot(dx,dy);
@@ -103,30 +140,26 @@ function update() {
 
   walls.forEach(w => {
     if (collideRect(enemy,{...w,size:enemy.size})) {
-      enemy.x = oldEX + (Math.random()-0.5)*10;
-      enemy.y = oldEY + (Math.random()-0.5)*10;
+      enemy.x = oldEX + (Math.random()-0.5)*20;
+      enemy.y = oldEY + (Math.random()-0.5)*20;
     }
   });
 
-  // Enemy hits player
   if (Math.hypot(player.x-enemy.x, player.y-enemy.y) < player.size+enemy.size) {
     player.hp--;
-    player.x = 100;
-    player.y = 100;
+    player.x += 50;
+    player.y += 50;
   }
 
-  // Objects
   objects.forEach((obj,i) => {
     obj.x += obj.dx;
     obj.y += obj.dy;
 
-    // Hit enemy
     if (Math.hypot(obj.x-enemy.x, obj.y-enemy.y) < obj.size+enemy.size) {
       enemy.lives--;
 
-      // Spawn extra bullets if special
       if (obj.spawn) {
-        for (let i=0;i<3;i++) {
+        for (let j=0;j<3;j++) {
           let a = Math.random()*Math.PI*2;
           objects.push({x:obj.x,y:obj.y,size:6,dx:Math.cos(a)*4,dy:Math.sin(a)*4,spawn:false});
         }
@@ -136,32 +169,35 @@ function update() {
     }
   });
 
-  // Cleanup
-  objects = objects.filter(o => o.x>0 && o.x<canvas.width && o.y>0 && o.y<canvas.height);
+  cam.x = player.x - canvas.width/2;
+  cam.y = player.y - canvas.height/2;
 }
 
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // Walls
-  ctx.fillStyle = "gray";
-  walls.forEach(w => ctx.fillRect(w.x,w.y,w.w,w.h));
+  // Draw walls (with camera offset)
+  ctx.fillStyle = "#555";
+  walls.forEach(w => {
+    ctx.fillRect(w.x - cam.x, w.y - cam.y, w.w, w.h);
+  });
 
   // Player
   ctx.fillStyle = "cyan";
-  ctx.fillRect(player.x,player.y,player.size,player.size);
+  ctx.fillRect(player.x - cam.x, player.y - cam.y, player.size, player.size);
 
   // Enemy
   ctx.fillStyle = "red";
-  ctx.fillRect(enemy.x,enemy.y,enemy.size,enemy.size);
+  ctx.fillRect(enemy.x - cam.x, enemy.y - cam.y, enemy.size, enemy.size);
 
   // Objects
   ctx.fillStyle = "yellow";
-  objects.forEach(o => ctx.fillRect(o.x,o.y,o.size,o.size));
+  objects.forEach(o => {
+    ctx.fillRect(o.x - cam.x, o.y - cam.y, o.size, o.size);
+  });
 
   // UI
   ctx.fillStyle = "white";
-  ctx.font = "18px Arial";
   ctx.fillText("Enemy Lives: "+enemy.lives,20,30);
   ctx.fillText("Player HP: "+player.hp,20,55);
 }
