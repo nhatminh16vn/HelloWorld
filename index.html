@@ -1,197 +1,1420 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Baldi PRO</title>
-  <style>
-    body { margin:0; overflow:hidden; }
-    canvas { display:block; background:#111; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>100 Dots vs 1 Killer - Ultimate Survival</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a2e;
+            color: #e6e6e6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        h1 {
+            color: #ff5252;
+            margin-bottom: 5px;
+            text-align: center;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            margin-bottom: 20px;
+            color: #aaa;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            width: 100%;
+            margin-bottom: 15px;
+            gap: 8px;
+        }
+        
+        .stat-box {
+            background-color: #162447;
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        #survivorCount { color: #4CAF50; }
+        #armedCount { color: #FF9800; }
+        #hiddenCount { color: #9C27B0; }
+        #killCount { color: #ff5252; }
+        #killerHealth { color: #ff5252; }
+        #traitorCount { color: #FF4081; }
+        #timeCount { color: #2196F3; }
+        #ammoCount { color: #FF9800; }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        button {
+            background-color: #1f4068;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2a5a9c;
+        }
+        
+        button:active {
+            transform: translateY(2px);
+        }
+        
+        button#resetBtn {
+            background-color: #ff5252;
+        }
+        
+        #simulationCanvas {
+            background-color: #0f3460;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            margin-bottom: 15px;
+            width: 100%;
+            height: auto;
+            max-width: 1200px;
+            border: 2px solid #1f4068;
+        }
+        
+        .instructions {
+            background-color: #162447;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            max-width: 1000px;
+            line-height: 1.4;
+            font-size: 13px;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .dot-sample {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+        
+        .survivor-sample { background-color: #4CAF50; }
+        .armed-sample { background-color: #FF9800; }
+        .hidden-sample { background-color: #9C27B0; }
+        .killer-sample { background-color: #ff5252; }
+        .traitor-sample { background-color: #FF4081; }
+        .hiding-sample {
+            width: 18px;
+            height: 18px;
+            background-color: #795548;
+            border-radius: 3px;
+        }
+        
+        .controls-group {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            justify-content: center;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: #162447;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        
+        .slider-container label {
+            font-size: 11px;
+        }
+        
+        input[type="range"] {
+            width: 100px;
+        }
+        
+        .game-over {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 100;
+            border: 3px solid #ff5252;
+            max-width: 400px;
+            width: 80%;
+        }
+        
+        .game-over button {
+            margin-top: 15px;
+            background-color: #ff5252;
+        }
+        
+        @media (max-width: 768px) {
+            .stats {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 5px;
+            }
+            
+            .stat-value {
+                font-size: 16px;
+            }
+            
+            .controls-group {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .legend {
+                gap: 8px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .performance-warning {
+            background-color: #ff5252;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            margin-bottom: 10px;
+            display: none;
+        }
+        
+        .status-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0,0,0,0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-family: monospace;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <h1>💀 100 Dots vs 1 Killer - Ultimate Survival 💀</h1>
+        <div class="subtitle">40 Armed Survivors | Hiding Places | 10% Traitor Chance | 100 Total Survivors</div>
+        
+        <div class="performance-warning" id="perfWarning">
+            ⚠️ Performance mode active - 100 dots may be demanding on slower devices
+        </div>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">🏃 Survivors</div>
+                <div class="stat-value" id="survivorCount">100</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">🔫 Armed</div>
+                <div class="stat-value" id="armedCount">40</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">🫣 Hidden</div>
+                <div class="stat-value" id="hiddenCount">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">💀 Kills</div>
+                <div class="stat-value" id="killCount">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">🩸 Traitors</div>
+                <div class="stat-value" id="traitorCount">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">❤️ Main HP</div>
+                <div class="stat-value" id="killerHealth">100</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">⏱️ Time</div>
+                <div class="stat-value" id="timeCount">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">🎯 Shots</div>
+                <div class="stat-value" id="ammoCount">0</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn">▶ Start</button>
+            <button id="pauseBtn">⏸ Pause</button>
+            <button id="resetBtn">🔄 Reset</button>
+            <button id="stepBtn">⏩ Step</button>
+        </div>
+        
+        <div class="controls-group">
+            <div class="slider-container">
+                <label>⚡ Speed:</label>
+                <input type="range" id="speedSlider" min="1" max="10" value="5">
+                <span id="speedValue">1.0x</span>
+            </div>
+            
+            <div class="slider-container">
+                <label>💀 Main HP:</label>
+                <input type="range" id="killerHealthSlider" min="50" max="300" value="120">
+                <span id="killerHealthValue">120</span>
+            </div>
+            
+            <div class="slider-container">
+                <label>🔄 Traitor %:</label>
+                <input type="range" id="traitorChanceSlider" min="5" max="30" value="10">
+                <span id="traitorChanceValue">10%</span>
+            </div>
+            
+            <div class="slider-container">
+                <label>🎯 Accuracy:</label>
+                <input type="range" id="armedAccuracySlider" min="10" max="90" value="45">
+                <span id="armedAccuracyValue">45%</span>
+            </div>
+            
+            <div class="slider-container">
+                <label>🏠 Hiding:</label>
+                <input type="range" id="hidingSpotsSlider" min="8" max="25" value="15">
+                <span id="hidingSpotsValue">15</span>
+            </div>
+        </div>
+        
+        <canvas id="simulationCanvas" width="1200" height="650"></canvas>
+        
+        <div class="legend">
+            <div class="legend-item"><div class="dot-sample survivor-sample"></div><span>Unarmed (60)</span></div>
+            <div class="legend-item"><div class="dot-sample armed-sample"></div><span>Armed (40)</span></div>
+            <div class="legend-item"><div class="dot-sample hidden-sample"></div><span>Hidden</span></div>
+            <div class="legend-item"><div class="dot-sample traitor-sample"></div><span>Traitor</span></div>
+            <div class="legend-item"><div class="dot-sample killer-sample"></div><span>Main Killer</span></div>
+            <div class="legend-item"><div class="hiding-sample"></div><span>Hiding Place</span></div>
+        </div>
+        
+        <div class="instructions">
+            <strong>📖 100 Survivor Rules:</strong> 60 unarmed (green) + 40 armed (orange) | 
+            <strong>🔄 Traitor:</strong> 10% of survivors become weaker pink killers when touched | 
+            <strong>🏠 Hiding:</strong> Survivors hide in brown rectangles | 
+            <strong>🔫 Combat:</strong> Armed survivors shoot at nearest killer | 
+            <strong>⚡ Performance:</strong> 100 dots + 15 hiding spots + dynamic traitors
+        </div>
+        
+        <div class="game-over" id="gameOver">
+            <h2 id="gameOverTitle">Game Over</h2>
+            <p id="gameOverMessage"></p>
+            <button onclick="resetSimulation()">Play Again</button>
+        </div>
+    </div>
 
-<canvas id="game"></canvas>
-
-<script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-// ===== PLAYER =====
-let player = { x:2, y:2, angle:0, stamina:100 };
-
-// ===== MAP (RANDOM GENERATOR) =====
-let mapSize = 10;
-let map = [];
-
-for (let y=0;y<mapSize;y++){
-  let row=[];
-  for (let x=0;x<mapSize;x++){
-    if (Math.random()<0.2 || x==0||y==0||x==mapSize-1||y==mapSize-1){
-      row.push(1); // wall
-    } else {
-      row.push(0); // empty
-    }
-  }
-  map.push(row);
-}
-
-// place notebook + exit
-map[8][8]=2; // notebook
-map[1][8]=3; // exit
-
-// ===== ENEMIES =====
-let baldi = {x:7,y:7};
-let principal = {x:5,y:5, anger:0};
-
-// ===== CONTROLS =====
-let keys={};
-document.addEventListener("keydown",e=>keys[e.key]=true);
-document.addEventListener("keyup",e=>keys[e.key]=false);
-
-// ===== MATH SYSTEM =====
-function askMath(){
-  let a = Math.floor(Math.random()*10);
-  let b = Math.floor(Math.random()*10);
-  let ans = prompt(a + " + " + b + " = ?");
-  if (parseInt(ans) === a+b){
-    alert("Correct!");
-  } else {
-    alert("Wrong! Baldi is faster now!");
-    baldi.speed = 0.1 + Math.random()*0.2;
-  }
-}
-
-// ===== MOVE =====
-function move(){
-  let speed = 0.05;
-
-  if (keys["Shift"] && player.stamina>0){
-    speed=0.1;
-    player.stamina-=0.5;
-
-    // PRINCIPAL PUNISH
-    principal.anger += 0.05;
-  } else {
-    player.stamina+=0.2;
-  }
-
-  if (keys["ArrowLeft"]) player.angle -= 0.05;
-  if (keys["ArrowRight"]) player.angle += 0.05;
-
-  let nx = player.x;
-  let ny = player.y;
-
-  if (keys["ArrowUp"]){
-    nx += Math.cos(player.angle)*speed;
-    ny += Math.sin(player.angle)*speed;
-  }
-
-  if (keys["ArrowDown"]){
-    nx -= Math.cos(player.angle)*speed;
-    ny -= Math.sin(player.angle)*speed;
-  }
-
-  if (map[Math.floor(ny)][Math.floor(nx)] !== 1){
-    player.x = nx;
-    player.y = ny;
-  }
-}
-
-// ===== ENEMIES =====
-function updateEnemies(){
-  // BALDI CHASE
-  let dx = player.x - baldi.x;
-  let dy = player.y - baldi.y;
-  let dist = Math.hypot(dx,dy);
-
-  baldi.x += dx * 0.01;
-  baldi.y += dy * 0.01;
-
-  if (dist < 0.5){
-    alert("Baldi caught you!");
-    location.reload();
-  }
-
-  // PRINCIPAL
-  let pdx = player.x - principal.x;
-  let pdy = player.y - principal.y;
-
-  principal.x += pdx * 0.01;
-  principal.y += pdy * 0.01;
-
-  if (principal.anger > 3){
-    alert("No running in the halls!");
-    player.stamina = 0;
-    principal.anger = 0;
-  }
-}
-
-// ===== INTERACTIONS =====
-function checkTile(){
-  let tile = map[Math.floor(player.y)][Math.floor(player.x)];
-
-  if (tile === 2){
-    askMath();
-    map[Math.floor(player.y)][Math.floor(player.x)] = 0;
-  }
-
-  if (tile === 3){
-    alert("YOU ESCAPED SCHOOL!");
-    location.reload();
-  }
-}
-
-// ===== FAKE 3D (RAYCASTING) =====
-function draw3D(){
-  let rays = 120;
-
-  for (let i=0;i<rays;i++){
-    let angle = player.angle - 0.5 + (i/rays);
-
-    for (let d=0; d<10; d+=0.05){
-      let x = player.x + Math.cos(angle)*d;
-      let y = player.y + Math.sin(angle)*d;
-
-      if (map[Math.floor(y)][Math.floor(x)] === 1){
-        let height = 300/(d);
-        ctx.fillStyle="white";
-        ctx.fillRect(i*(canvas.width/rays),
-                     canvas.height/2-height/2,
-                     canvas.width/rays,
-                     height);
-        break;
-      }
-    }
-  }
-}
-
-// ===== UI =====
-function drawUI(){
-  ctx.fillStyle="green";
-  ctx.fillRect(20,20,player.stamina*2,10);
-
-  ctx.fillStyle="white";
-  ctx.fillText("Stamina",20,50);
-}
-
-// ===== LOOP =====
-function loop(){
-  ctx.fillStyle="black";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  move();
-  updateEnemies();
-  checkTile();
-  draw3D();
-  drawUI();
-
-  requestAnimationFrame(loop);
-}
-
-loop();
-</script>
-
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('simulationCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Stats elements
+        const survivorCountElement = document.getElementById('survivorCount');
+        const armedCountElement = document.getElementById('armedCount');
+        const hiddenCountElement = document.getElementById('hiddenCount');
+        const killCountElement = document.getElementById('killCount');
+        const traitorCountElement = document.getElementById('traitorCount');
+        const killerHealthElement = document.getElementById('killerHealth');
+        const timeCountElement = document.getElementById('timeCount');
+        const ammoCountElement = document.getElementById('ammoCount');
+        
+        // Control buttons
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const stepBtn = document.getElementById('stepBtn');
+        
+        // Sliders
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        const killerHealthSlider = document.getElementById('killerHealthSlider');
+        const killerHealthValue = document.getElementById('killerHealthValue');
+        const traitorChanceSlider = document.getElementById('traitorChanceSlider');
+        const traitorChanceValue = document.getElementById('traitorChanceValue');
+        const armedAccuracySlider = document.getElementById('armedAccuracySlider');
+        const armedAccuracyValue = document.getElementById('armedAccuracyValue');
+        const hidingSpotsSlider = document.getElementById('hidingSpotsSlider');
+        const hidingSpotsValue = document.getElementById('hidingSpotsValue');
+        
+        // Game over screen
+        const gameOverScreen = document.getElementById('gameOver');
+        const gameOverTitle = document.getElementById('gameOverTitle');
+        const gameOverMessage = document.getElementById('gameOverMessage');
+        
+        // Performance warning
+        const perfWarning = document.getElementById('perfWarning');
+        
+        // Simulation variables
+        let survivors = [];
+        let traitors = [];
+        let hidingPlaces = [];
+        let mainKiller = { x: 0, y: 0, vx: 0, vy: 0 };
+        let bullets = [];
+        let animationId = null;
+        let isRunning = false;
+        let killCount = 0;
+        let simulationTime = 0;
+        let ammoFired = 0;
+        let killerSpeedMultiplier = 1.5;
+        let mainKillerHealth = 120;
+        let maxMainKillerHealth = 120;
+        let armedAccuracy = 0.45;
+        let numHidingPlaces = 15;
+        let traitorChance = 0.1;
+        
+        // Performance optimization - limit max bullets on screen
+        const MAX_BULLETS = 100;
+        
+        // Speed control
+        const speedMap = {
+            1: 0.3, 2: 0.5, 3: 0.7, 4: 0.9, 5: 1.0,
+            6: 1.5, 7: 2.0, 8: 2.5, 9: 3.0, 10: 4.0
+        };
+        
+        // Initialize the simulation
+        function init() {
+            survivors = [];
+            traitors = [];
+            bullets = [];
+            hidingPlaces = [];
+            killCount = 0;
+            simulationTime = 0;
+            ammoFired = 0;
+            
+            // Set values from sliders
+            mainKillerHealth = parseInt(killerHealthSlider.value);
+            maxMainKillerHealth = mainKillerHealth;
+            armedAccuracy = parseInt(armedAccuracySlider.value) / 100;
+            traitorChance = parseInt(traitorChanceSlider.value) / 100;
+            numHidingPlaces = parseInt(hidingSpotsSlider.value);
+            
+            // Create hiding places
+            createHidingPlaces();
+            
+            // Create 100 survivors (40 armed, 60 unarmed)
+            const totalSurvivors = 100;
+            const armedCount = 40;
+            
+            for (let i = 0; i < totalSurvivors; i++) {
+                const isArmed = i < armedCount;
+                
+                survivors.push({
+                    id: i,
+                    x: Math.random() * (canvas.width - 60) + 30,
+                    y: Math.random() * (canvas.height - 60) + 30,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    radius: isArmed ? 6 : 5,
+                    color: isArmed ? '#FF9800' : '#4CAF50',
+                    armed: isArmed,
+                    alive: true,
+                    hidden: false,
+                    hidingIn: null,
+                    panic: false,
+                    panicTime: 0,
+                    lastShotTime: 0,
+                    shootCooldown: 50,
+                    range: 140,
+                    accuracy: armedAccuracy,
+                    lastHideCheck: 0,
+                    hideCooldown: 35
+                });
+            }
+            
+            // Create main killer
+            mainKiller = {
+                id: 'main',
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                vx: 0,
+                vy: 0,
+                radius: 12,
+                color: '#ff5252',
+                target: null,
+                health: mainKillerHealth,
+                maxHealth: maxMainKillerHealth,
+                healPerKill: 8,
+                damagePerHit: 10,
+                speed: 1.8,
+                canSeeHidden: false,
+                lastHiddenCheck: 0,
+                hiddenCheckCooldown: 20,
+                isMainKiller: true
+            };
+            
+            updateStats();
+            draw();
+            
+            // Show performance warning on slower devices
+            if (totalSurvivors > 80 && navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) {
+                perfWarning.style.display = 'block';
+                setTimeout(() => {
+                    perfWarning.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // Create hiding places
+        function createHidingPlaces() {
+            hidingPlaces = [];
+            
+            for (let i = 0; i < numHidingPlaces; i++) {
+                const width = 45 + Math.random() * 50;
+                const height = 45 + Math.random() * 50;
+                
+                let attempts = 0;
+                let placed = false;
+                
+                while (!placed && attempts < 30) {
+                    const x = Math.random() * (canvas.width - width - 20) + 10;
+                    const y = Math.random() * (canvas.height - height - 20) + 10;
+                    
+                    let overlap = false;
+                    for (let place of hidingPlaces) {
+                        if (rectIntersect(x, y, width, height, place.x, place.y, place.width, place.height)) {
+                            overlap = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!overlap) {
+                        hidingPlaces.push({
+                            id: i,
+                            x: x,
+                            y: y,
+                            width: width,
+                            height: height,
+                            color: '#795548',
+                            occupiedBy: [],
+                            capacity: Math.max(1, Math.floor(width * height / 400))
+                        });
+                        placed = true;
+                    }
+                    
+                    attempts++;
+                }
+                
+                if (!placed) {
+                    hidingPlaces.push({
+                        id: i,
+                        x: 20 + Math.random() * (canvas.width - 100),
+                        y: 20 + Math.random() * (canvas.height - 100),
+                        width: width,
+                        height: height,
+                        color: '#795548',
+                        occupiedBy: [],
+                        capacity: 2
+                    });
+                }
+            }
+        }
+        
+        function rectIntersect(x1, y1, w1, h1, x2, y2, w2, h2) {
+            return x1 < x2 + w2 && x1 + w1 > x2 && y1 < y2 + h2 && y1 + h1 > y2;
+        }
+        
+        function pointInRect(px, py, rx, ry, rw, rh) {
+            return px >= rx && px <= rx + rw && py >= ry && py <= ry + rh;
+        }
+        
+        // Create a traitor from a survivor
+        function createTraitor(survivor) {
+            const traitorId = 'traitor_' + Date.now() + '_' + Math.random();
+            
+            const traitor = {
+                id: traitorId,
+                x: survivor.x,
+                y: survivor.y,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                radius: 8,
+                color: '#FF4081',
+                target: null,
+                health: 55,
+                maxHealth: 55,
+                healPerKill: 4,
+                damagePerHit: 5,
+                speed: 1.3,
+                lastTargetChange: 0,
+                targetChangeCooldown: 35,
+                isMainKiller: false,
+                isTraitor: true,
+                convertedFromArmed: survivor.armed
+            };
+            
+            traitors.push(traitor);
+            return traitor;
+        }
+        
+        function updateStats() {
+            const aliveSurvivors = survivors.filter(s => s.alive);
+            const armedAlive = aliveSurvivors.filter(s => s.armed);
+            const hiddenAlive = aliveSurvivors.filter(s => s.hidden);
+            
+            survivorCountElement.textContent = aliveSurvivors.length;
+            armedCountElement.textContent = armedAlive.length;
+            hiddenCountElement.textContent = hiddenAlive.length;
+            killCountElement.textContent = killCount;
+            traitorCountElement.textContent = traitors.length;
+            killerHealthElement.textContent = Math.max(0, Math.floor(mainKiller.health));
+            timeCountElement.textContent = Math.floor(simulationTime);
+            ammoCountElement.textContent = ammoFired;
+        }
+        
+        // Optimized survivor hiding
+        function updateSurvivorHiding(survivor) {
+            if (survivor.hidden || simulationTime * 60 - survivor.lastHideCheck < survivor.hideCooldown) {
+                return;
+            }
+            
+            survivor.lastHideCheck = simulationTime * 60;
+            
+            // Quick distance check to nearest killer
+            let nearestKillerDistance = distanceBetween(survivor.x, survivor.y, mainKiller.x, mainKiller.y);
+            for (let traitor of traitors) {
+                const d = distanceBetween(survivor.x, survivor.y, traitor.x, traitor.y);
+                if (d < nearestKillerDistance) nearestKillerDistance = d;
+            }
+            
+            if (nearestKillerDistance > 160) return;
+            
+            // Find nearest hiding place
+            let nearestPlace = null;
+            let minDistance = Infinity;
+            
+            for (let place of hidingPlaces) {
+                if (place.occupiedBy.length >= place.capacity) continue;
+                
+                const placeCenterX = place.x + place.width/2;
+                const placeCenterY = place.y + place.height/2;
+                const distance = distanceBetween(survivor.x, survivor.y, placeCenterX, placeCenterY);
+                
+                if (distance < minDistance && distance < 90) {
+                    minDistance = distance;
+                    nearestPlace = place;
+                }
+            }
+            
+            if (nearestPlace) {
+                survivor.hidden = true;
+                survivor.hidingIn = nearestPlace.id;
+                survivor.color = '#9C27B0';
+                survivor.x = nearestPlace.x + 5 + Math.random() * (nearestPlace.width - 10);
+                survivor.y = nearestPlace.y + 5 + Math.random() * (nearestPlace.height - 10);
+                survivor.vx = 0;
+                survivor.vy = 0;
+                nearestPlace.occupiedBy.push(survivor.id);
+            }
+        }
+        
+        function updateSurvivorLeavingHiding(survivor) {
+            if (!survivor.hidden) return;
+            
+            let nearestKillerDistance = distanceBetween(survivor.x, survivor.y, mainKiller.x, mainKiller.y);
+            for (let traitor of traitors) {
+                const d = distanceBetween(survivor.x, survivor.y, traitor.x, traitor.y);
+                if (d < nearestKillerDistance) nearestKillerDistance = d;
+            }
+            
+            if (nearestKillerDistance > 220 || mainKiller.health < 25) {
+                const place = hidingPlaces.find(p => p.id === survivor.hidingIn);
+                if (place) {
+                    const index = place.occupiedBy.indexOf(survivor.id);
+                    if (index > -1) place.occupiedBy.splice(index, 1);
+                }
+                
+                survivor.hidden = false;
+                survivor.hidingIn = null;
+                survivor.color = survivor.armed ? '#FF9800' : '#4CAF50';
+                
+                if (place) {
+                    survivor.x = Math.min(canvas.width - survivor.radius, place.x + place.width + 15);
+                    survivor.y = Math.min(canvas.height - survivor.radius, place.y + place.height / 2);
+                }
+                
+                survivor.vx = (Math.random() - 0.5) * 2;
+                survivor.vy = (Math.random() - 0.5) * 2;
+            }
+        }
+        
+        function distanceBetween(x1, y1, x2, y2) {
+            const dx = x1 - x2;
+            const dy = y1 - y2;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+        
+        // Optimized survivor update for 100 dots
+        function updateSurvivors() {
+            for (let survivor of survivors) {
+                if (!survivor.alive) continue;
+                
+                if (survivor.hidden) {
+                    updateSurvivorLeavingHiding(survivor);
+                    continue;
+                } else {
+                    updateSurvivorHiding(survivor);
+                    if (survivor.hidden) continue;
+                }
+                
+                // Find nearest killer (optimized)
+                let nearestKiller = mainKiller;
+                let minDistance = distanceBetween(survivor.x, survivor.y, mainKiller.x, mainKiller.y);
+                
+                for (let traitor of traitors) {
+                    const d = distanceBetween(survivor.x, survivor.y, traitor.x, traitor.y);
+                    if (d < minDistance) {
+                        minDistance = d;
+                        nearestKiller = traitor;
+                    }
+                }
+                
+                const dx = survivor.x - nearestKiller.x;
+                const dy = survivor.y - nearestKiller.y;
+                const distance = minDistance;
+                
+                // Panic when killer close
+                if (distance < 100) {
+                    survivor.panic = true;
+                    survivor.panicTime = 25;
+                }
+                
+                // Check near hiding place for accuracy bonus
+                let nearHidingPlace = false;
+                for (let place of hidingPlaces) {
+                    const placeCenterX = place.x + place.width/2;
+                    const placeCenterY = place.y + place.height/2;
+                    if (distanceBetween(survivor.x, survivor.y, placeCenterX, placeCenterY) < 70) {
+                        nearHidingPlace = true;
+                        break;
+                    }
+                }
+                
+                // Armed survivors shooting
+                if (survivor.armed && distance < survivor.range && 
+                    simulationTime - survivor.lastShotTime > survivor.shootCooldown / 60 &&
+                    bullets.length < MAX_BULLETS) {
+                    
+                    const accuracyBonus = nearHidingPlace ? 0.15 : 0;
+                    const effectiveAccuracy = Math.min(0.9, survivor.accuracy + accuracyBonus);
+                    
+                    // Simplified line of sight for performance
+                    let lineOfSightBlocked = false;
+                    for (let place of hidingPlaces) {
+                        if (lineIntersectsRect(survivor.x, survivor.y, nearestKiller.x, nearestKiller.y, 
+                                              place.x, place.y, place.width, place.height)) {
+                            lineOfSightBlocked = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!lineOfSightBlocked && Math.random() < 0.6) {
+                        shootAtTarget(survivor, nearestKiller, effectiveAccuracy);
+                        survivor.lastShotTime = simulationTime;
+                    }
+                }
+                
+                // Movement with panic
+                if (survivor.panicTime > 0) {
+                    survivor.panicTime--;
+                    if (distance > 0) {
+                        const panicForce = 0.35;
+                        survivor.vx += (dx / distance) * panicForce;
+                        survivor.vy += (dy / distance) * panicForce;
+                    }
+                    
+                    const speed = survivor.armed ? 2.8 : 2.3;
+                    const currentSpeed = Math.hypot(survivor.vx, survivor.vy);
+                    if (currentSpeed > speed) {
+                        survivor.vx = (survivor.vx / currentSpeed) * speed;
+                        survivor.vy = (survivor.vy / currentSpeed) * speed;
+                    }
+                } else {
+                    survivor.panic = false;
+                    
+                    if (Math.random() < 0.04) {
+                        survivor.vx += (Math.random() - 0.5) * 0.6;
+                        survivor.vy += (Math.random() - 0.5) * 0.6;
+                    }
+                    
+                    const speed = survivor.armed ? 2.0 : 1.7;
+                    const currentSpeed = Math.hypot(survivor.vx, survivor.vy);
+                    if (currentSpeed > speed) {
+                        survivor.vx = (survivor.vx / currentSpeed) * speed;
+                        survivor.vy = (survivor.vy / currentSpeed) * speed;
+                    }
+                }
+                
+                // Update position
+                survivor.x += survivor.vx;
+                survivor.y += survivor.vy;
+                
+                // Boundary collision
+                if (survivor.x < survivor.radius) {
+                    survivor.x = survivor.radius;
+                    survivor.vx = Math.abs(survivor.vx);
+                }
+                if (survivor.x > canvas.width - survivor.radius) {
+                    survivor.x = canvas.width - survivor.radius;
+                    survivor.vx = -Math.abs(survivor.vx);
+                }
+                if (survivor.y < survivor.radius) {
+                    survivor.y = survivor.radius;
+                    survivor.vy = Math.abs(survivor.vy);
+                }
+                if (survivor.y > canvas.height - survivor.radius) {
+                    survivor.y = canvas.height - survivor.radius;
+                    survivor.vy = -Math.abs(survivor.vy);
+                }
+            }
+        }
+        
+        function lineIntersectsRect(x1, y1, x2, y2, rx, ry, rw, rh) {
+            if (pointInRect(x1, y1, rx, ry, rw, rh) || pointInRect(x2, y2, rx, ry, rw, rh)) return true;
+            
+            const lines = [
+                [rx, ry, rx + rw, ry],
+                [rx + rw, ry, rx + rw, ry + rh],
+                [rx, ry + rh, rx + rw, ry + rh],
+                [rx, ry, rx, ry + rh]
+            ];
+            
+            for (let line of lines) {
+                if (lineIntersectsLine(x1, y1, x2, y2, line[0], line[1], line[2], line[3])) return true;
+            }
+            return false;
+        }
+        
+        function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
+            const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+            if (denom === 0) return false;
+            
+            const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
+            const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom;
+            
+            return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1;
+        }
+        
+        function shootAtTarget(shooter, target, accuracy) {
+            ammoFired++;
+            
+            const dx = target.x - shooter.x;
+            const dy = target.y - shooter.y;
+            const angle = Math.atan2(dy, dx);
+            
+            const inaccuracy = (1 - accuracy) * Math.PI / 7;
+            const adjustedAngle = angle + (Math.random() - 0.5) * inaccuracy;
+            
+            const startX = shooter.x + Math.cos(angle) * (shooter.radius + 4);
+            const startY = shooter.y + Math.sin(angle) * (shooter.radius + 4);
+            
+            bullets.push({
+                x: startX,
+                y: startY,
+                vx: Math.cos(adjustedAngle) * 7,
+                vy: Math.sin(adjustedAngle) * 7,
+                radius: 2.5,
+                color: '#FFD700',
+                lifetime: 50,
+                damage: 8,
+                targetId: target.id
+            });
+        }
+        
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                
+                bullet.x += bullet.vx;
+                bullet.y += bullet.vy;
+                bullet.lifetime--;
+                
+                // Hit main killer
+                if (!bullet.targetId || bullet.targetId === 'main') {
+                    const distance = distanceBetween(bullet.x, bullet.y, mainKiller.x, mainKiller.y);
+                    if (distance < mainKiller.radius + bullet.radius) {
+                        mainKiller.health -= bullet.damage;
+                        bullets.splice(i, 1);
+                        continue;
+                    }
+                }
+                
+                // Hit traitors
+                let hitTraitor = false;
+                for (let j = 0; j < traitors.length; j++) {
+                    const traitor = traitors[j];
+                    if (!bullet.targetId || bullet.targetId === traitor.id) {
+                        const distance = distanceBetween(bullet.x, bullet.y, traitor.x, traitor.y);
+                        if (distance < traitor.radius + bullet.radius) {
+                            traitor.health -= bullet.damage;
+                            if (traitor.health <= 0) {
+                                traitors.splice(j, 1);
+                            }
+                            bullets.splice(i, 1);
+                            hitTraitor = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (hitTraitor) continue;
+                
+                // Check hiding place collision
+                let blocked = false;
+                for (let place of hidingPlaces) {
+                    if (pointInRect(bullet.x, bullet.y, place.x, place.y, place.width, place.height)) {
+                        blocked = true;
+                        break;
+                    }
+                }
+                
+                if (blocked || bullet.x < 0 || bullet.x > canvas.width || 
+                    bullet.y < 0 || bullet.y > canvas.height || bullet.lifetime <= 0) {
+                    bullets.splice(i, 1);
+                }
+            }
+        }
+        
+        function updateTraitors() {
+            for (let i = traitors.length - 1; i >= 0; i--) {
+                const traitor = traitors[i];
+                
+                if (simulationTime * 60 - traitor.lastTargetChange > traitor.targetChangeCooldown) {
+                    traitor.lastTargetChange = simulationTime * 60;
+                    
+                    let bestTarget = null;
+                    let bestScore = -Infinity;
+                    
+                    for (let survivor of survivors) {
+                        if (!survivor.alive || survivor.hidden) continue;
+                        
+                        let score = survivor.armed ? 40 : 100;
+                        const distance = distanceBetween(survivor.x, survivor.y, traitor.x, traitor.y);
+                        score -= distance * 0.4;
+                        
+                        if (mainKiller.target && mainKiller.target.id === survivor.id) {
+                            score -= 20;
+                        }
+                        
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestTarget = survivor;
+                        }
+                    }
+                    
+                    traitor.target = bestTarget;
+                }
+                
+                if (traitor.target && traitor.target.alive) {
+                    const dx = traitor.target.x - traitor.x;
+                    const dy = traitor.target.y - traitor.y;
+                    const distance = Math.hypot(dx, dy);
+                    
+                    if (distance > 0) {
+                        traitor.vx = (dx / distance) * traitor.speed * killerSpeedMultiplier * 0.65;
+                        traitor.vy = (dy / distance) * traitor.speed * killerSpeedMultiplier * 0.65;
+                    }
+                    
+                    if (distance < traitor.radius + traitor.target.radius) {
+                        const survivor = traitor.target;
+                        
+                        if (Math.random() < traitorChance) {
+                            createTraitor(survivor);
+                            survivor.alive = false;
+                            killCount++;
+                            traitor.health = Math.min(traitor.maxHealth, traitor.health + traitor.healPerKill);
+                            traitor.vx = -traitor.vx * 0.5;
+                            traitor.vy = -traitor.vy * 0.5;
+                            
+                            if (survivor.hidingIn !== null) {
+                                const place = hidingPlaces.find(p => p.id === survivor.hidingIn);
+                                if (place) {
+                                    const index = place.occupiedBy.indexOf(survivor.id);
+                                    if (index > -1) place.occupiedBy.splice(index, 1);
+                                }
+                            }
+                        } else {
+                            survivor.alive = false;
+                            killCount++;
+                            traitor.health = Math.min(traitor.maxHealth, traitor.health + traitor.healPerKill);
+                            traitor.vx = -traitor.vx * 0.5;
+                            traitor.vy = -traitor.vy * 0.5;
+                            
+                            if (survivor.hidingIn !== null) {
+                                const place = hidingPlaces.find(p => p.id === survivor.hidingIn);
+                                if (place) {
+                                    const index = place.occupiedBy.indexOf(survivor.id);
+                                    if (index > -1) place.occupiedBy.splice(index, 1);
+                                }
+                            }
+                        }
+                        traitor.target = null;
+                    }
+                } else {
+                    traitor.vx *= 0.95;
+                    traitor.vy *= 0.95;
+                    if (Math.random() < 0.04) {
+                        traitor.vx += (Math.random() - 0.5) * 0.5;
+                        traitor.vy += (Math.random() - 0.5) * 0.5;
+                    }
+                }
+                
+                // Avoid main killer
+                const distanceToMain = distanceBetween(traitor.x, traitor.y, mainKiller.x, mainKiller.y);
+                if (distanceToMain < 55) {
+                    const dx = traitor.x - mainKiller.x;
+                    const dy = traitor.y - mainKiller.y;
+                    const avoidForce = 0.35;
+                    traitor.vx += (dx / distanceToMain) * avoidForce;
+                    traitor.vy += (dy / distanceToMain) * avoidForce;
+                }
+                
+                traitor.x += traitor.vx;
+                traitor.y += traitor.vy;
+                
+                if (traitor.x < traitor.radius) { traitor.x = traitor.radius; traitor.vx = Math.abs(traitor.vx); }
+                if (traitor.x > canvas.width - traitor.radius) { traitor.x = canvas.width - traitor.radius; traitor.vx = -Math.abs(traitor.vx); }
+                if (traitor.y < traitor.radius) { traitor.y = traitor.radius; traitor.vy = Math.abs(traitor.vy); }
+                if (traitor.y > canvas.height - traitor.radius) { traitor.y = canvas.height - traitor.radius; traitor.vy = -Math.abs(traitor.vy); }
+            }
+        }
+        
+        function updateMainKiller() {
+            const healthPercent = mainKiller.health / mainKiller.maxHealth;
+            mainKiller.speed = healthPercent < 0.3 ? 2.2 : 1.8;
+            mainKiller.canSeeHidden = healthPercent < 0.18;
+            
+            let targets = [];
+            
+            for (let survivor of survivors) {
+                if (!survivor.alive) continue;
+                
+                if (survivor.hidden && !mainKiller.canSeeHidden) {
+                    if (distanceBetween(mainKiller.x, mainKiller.y, survivor.x, survivor.y) < 35 && 
+                        simulationTime * 60 - mainKiller.lastHiddenCheck > mainKiller.hiddenCheckCooldown) {
+                        mainKiller.lastHiddenCheck = simulationTime * 60;
+                        if (Math.random() < 0.25) {
+                            survivor.hidden = false;
+                            survivor.color = survivor.armed ? '#FF9800' : '#4CAF50';
+                            const place = hidingPlaces.find(p => p.id === survivor.hidingIn);
+                            if (place) {
+                                const index = place.occupiedBy.indexOf(survivor.id);
+                                if (index > -1) place.occupiedBy.splice(index, 1);
+                            }
+                            survivor.hidingIn = null;
+                        }
+                    }
+                    continue;
+                }
+                
+                const distance = distanceBetween(survivor.x, survivor.y, mainKiller.x, mainKiller.y);
+                const priority = survivor.armed ? 3 : (survivor.hidden ? 1 : 2);
+                targets.push({ survivor, distance, priority });
+            }
+            
+            targets.sort((a, b) => {
+                if (a.priority !== b.priority) return b.priority - a.priority;
+                return a.distance - b.distance;
+            });
+            
+            if (targets.length > 0) {
+                mainKiller.target = targets[0].survivor;
+                const target = mainKiller.target;
+                const dx = target.x - mainKiller.x;
+                const dy = target.y - mainKiller.y;
+                const distance = Math.hypot(dx, dy);
+                
+                if (distance > 0) {
+                    mainKiller.vx = (dx / distance) * mainKiller.speed * killerSpeedMultiplier;
+                    mainKiller.vy = (dy / distance) * mainKiller.speed * killerSpeedMultiplier;
+                }
+                
+                if (distance < mainKiller.radius + target.radius && !target.hidden) {
+                    if (Math.random() < traitorChance) {
+                        createTraitor(target);
+                        target.alive = false;
+                        killCount++;
+                        mainKiller.health = Math.min(mainKiller.maxHealth, mainKiller.health + mainKiller.healPerKill);
+                        mainKiller.vx = -mainKiller.vx * 0.5;
+                        mainKiller.vy = -mainKiller.vy * 0.5;
+                        
+                        if (target.hidingIn !== null) {
+                            const place = hidingPlaces.find(p => p.id === target.hidingIn);
+                            if (place) {
+                                const index = place.occupiedBy.indexOf(target.id);
+                                if (index > -1) place.occupiedBy.splice(index, 1);
+                            }
+                        }
+                    } else {
+                        target.alive = false;
+                        killCount++;
+                        mainKiller.health = Math.min(mainKiller.maxHealth, mainKiller.health + mainKiller.healPerKill);
+                        mainKiller.vx = -mainKiller.vx * 0.5;
+                        mainKiller.vy = -mainKiller.vy * 0.5;
+                        
+                        if (target.hidingIn !== null) {
+                            const place = hidingPlaces.find(p => p.id === target.hidingIn);
+                            if (place) {
+                                const index = place.occupiedBy.indexOf(target.id);
+                                if (index > -1) place.occupiedBy.splice(index, 1);
+                            }
+                        }
+                    }
+                    mainKiller.target = null;
+                }
+            } else {
+                mainKiller.vx *= 0.95;
+                mainKiller.vy *= 0.95;
+                mainKiller.target = null;
+            }
+            
+            // Avoid traitors
+            for (let traitor of traitors) {
+                const distance = distanceBetween(mainKiller.x, mainKiller.y, traitor.x, traitor.y);
+                if (distance < mainKiller.radius + traitor.radius + 15) {
+                    const dx = mainKiller.x - traitor.x;
+                    const dy = mainKiller.y - traitor.y;
+                    const avoidForce = 0.4;
+                    mainKiller.vx += (dx / distance) * avoidForce;
+                    mainKiller.vy += (dy / distance) * avoidForce;
+                }
+            }
+            
+            mainKiller.x += mainKiller.vx;
+            mainKiller.y += mainKiller.vy;
+            
+            if (mainKiller.x < mainKiller.radius) { mainKiller.x = mainKiller.radius; mainKiller.vx = Math.abs(mainKiller.vx); }
+            if (mainKiller.x > canvas.width - mainKiller.radius) { mainKiller.x = canvas.width - mainKiller.radius; mainKiller.vx = -Math.abs(mainKiller.vx); }
+            if (mainKiller.y < mainKiller.radius) { mainKiller.y = mainKiller.radius; mainKiller.vy = Math.abs(mainKiller.vy); }
+            if (mainKiller.y > canvas.height - mainKiller.radius) { mainKiller.y = canvas.height - mainKiller.radius; mainKiller.vy = -Math.abs(mainKiller.vy); }
+        }
+        
+        function draw() {
+            ctx.fillStyle = '#0f3460';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw hiding places
+            for (let place of hidingPlaces) {
+                ctx.fillStyle = place.color;
+                ctx.fillRect(place.x, place.y, place.width, place.height);
+                ctx.strokeStyle = '#5D4037';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(place.x, place.y, place.width, place.height);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.font = '9px Arial';
+                ctx.fillText(`${place.occupiedBy.length}/${place.capacity}`, place.x + 3, place.y + 12);
+            }
+            
+            // Draw bullets
+            for (let bullet of bullets) {
+                ctx.beginPath();
+                ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+                ctx.fillStyle = bullet.color;
+                ctx.fill();
+            }
+            
+            // Draw survivors
+            for (let survivor of survivors) {
+                if (!survivor.alive) continue;
+                
+                ctx.beginPath();
+                ctx.arc(survivor.x, survivor.y, survivor.radius, 0, Math.PI * 2);
+                ctx.fillStyle = survivor.panic ? '#FF5252' : survivor.color;
+                ctx.fill();
+                
+                if (survivor.hidden) {
+                    ctx.beginPath();
+                    ctx.arc(survivor.x, survivor.y, survivor.radius + 2, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#9C27B0';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw traitors
+            for (let traitor of traitors) {
+                ctx.beginPath();
+                ctx.arc(traitor.x, traitor.y, traitor.radius, 0, Math.PI * 2);
+                ctx.fillStyle = traitor.color;
+                ctx.fill();
+                ctx.strokeStyle = '#C2185B';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                
+                const healthPercent = traitor.health / traitor.maxHealth;
+                const barWidth = 28;
+                const barHeight = 3;
+                ctx.fillStyle = '#333';
+                ctx.fillRect(traitor.x - barWidth/2, traitor.y - traitor.radius - 6, barWidth, barHeight);
+                ctx.fillStyle = healthPercent > 0.5 ? '#FF4081' : '#F48FB1';
+                ctx.fillRect(traitor.x - barWidth/2, traitor.y - traitor.radius - 6, barWidth * healthPercent, barHeight);
+            }
+            
+            // Draw main killer
+            ctx.beginPath();
+            ctx.arc(mainKiller.x, mainKiller.y, mainKiller.radius, 0, Math.PI * 2);
+            const healthPercent = mainKiller.health / mainKiller.maxHealth;
+            const killerColor = healthPercent > 0.7 ? '#ff5252' : (healthPercent > 0.4 ? '#ff8a80' : '#ff1744');
+            ctx.fillStyle = killerColor;
+            ctx.fill();
+            ctx.strokeStyle = '#800000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Health bar
+            const barWidth = 45;
+            const barHeight = 5;
+            ctx.fillStyle = '#333';
+            ctx.fillRect(mainKiller.x - barWidth/2, mainKiller.y - mainKiller.radius - 12, barWidth, barHeight);
+            ctx.fillStyle = healthPercent > 0.5 ? '#4CAF50' : (healthPercent > 0.25 ? '#FF9800' : '#F44336');
+            ctx.fillRect(mainKiller.x - barWidth/2, mainKiller.y - mainKiller.radius - 12, barWidth * healthPercent, barHeight);
+            
+            // Eyes
+            ctx.fillStyle = '#000';
+            const eyeOffset = mainKiller.radius * 0.4;
+            ctx.beginPath();
+            ctx.arc(mainKiller.x - eyeOffset, mainKiller.y - mainKiller.radius * 0.3, mainKiller.radius * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(mainKiller.x + eyeOffset, mainKiller.y - mainKiller.radius * 0.3, mainKiller.radius * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            if (mainKiller.canSeeHidden) {
+                ctx.beginPath();
+                ctx.arc(mainKiller.x, mainKiller.y, mainKiller.radius + 7, 0, Math.PI * 2);
+                ctx.strokeStyle = '#FF9800';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+            
+            if (mainKiller.target && mainKiller.target.alive && !mainKiller.target.hidden) {
+                ctx.beginPath();
+                ctx.moveTo(mainKiller.x, mainKiller.y);
+                ctx.lineTo(mainKiller.target.x, mainKiller.target.y);
+                ctx.strokeStyle = mainKiller.target.armed ? 'rgba(255, 152, 0, 0.5)' : 'rgba(76, 175, 80, 0.5)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        }
+        
+        function checkGameOver() {
+            const aliveSurvivors = survivors.filter(s => s.alive);
+            
+            if (mainKiller.health <= 0 && traitors.length === 0) {
+                const hiddenAlive = aliveSurvivors.filter(s => s.hidden).length;
+                showGameOver("🏆 SURVIVORS WIN! 🏆", `${aliveSurvivors.length} survivors remain (${hiddenAlive} hidden). The killer was defeated!`);
+                return true;
+            }
+            
+            if (aliveSurvivors.length === 0) {
+                const winner = mainKiller.health > 0 ? "Main Killer" : "Traitors";
+                showGameOver("💀 GAME OVER - KILLERS WIN 💀", `All ${killCount} survivors were eliminated! ${winner} claimed victory.`);
+                return true;
+            }
+            
+            if (simulationTime >= 300) {
+                const armedAlive = aliveSurvivors.filter(s => s.armed).length;
+                const hiddenAlive = aliveSurvivors.filter(s => s.hidden).length;
+                showGameOver("⏰ TIME'S UP!", `${aliveSurvivors.length}/${100} survivors survived (${armedAlive} armed, ${hiddenAlive} hidden). ${traitors.length} traitors remain.`);
+                return true;
+            }
+            
+            return false;
+        }
+        
+        function showGameOver(title, message) {
+            gameOverTitle.textContent = title;
+            gameOverMessage.textContent = message;
+            gameOverScreen.style.display = 'block';
+            stopSimulation();
+        }
+        
+        function animate() {
+            simulationTime += 1/60;
+            
+            updateSurvivors();
+            updateTraitors();
+            updateMainKiller();
+            updateBullets();
+            draw();
+            updateStats();
+            
+            if (checkGameOver()) return;
+            
+            if (isRunning) {
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+        
+        function startSimulation() {
+            if (isRunning) return;
+            isRunning = true;
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            stepBtn.disabled = true;
+            gameOverScreen.style.display = 'none';
+            animate();
+        }
+        
+        function pauseSimulation() {
+            isRunning = false;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            stepBtn.disabled = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+        
+        function stopSimulation() {
+            isRunning = false;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            stepBtn.disabled = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+        
+        function resetSimulation() {
+            stopSimulation();
+            gameOverScreen.style.display = 'none';
+            init();
+        }
+        
+        function stepSimulation() {
+            if (isRunning) return;
+            simulationTime += 1/60;
+            updateSurvivors();
+            updateTraitors();
+            updateMainKiller();
+            updateBullets();
+            draw();
+            updateStats();
+            checkGameOver();
+        }
+        
+        function updateSpeed() {
+            const sliderValue = parseInt(speedSlider.value);
+            const speed = speedMap[sliderValue];
+            speedValue.textContent = `${speed.toFixed(1)}x`;
+            killerSpeedMultiplier = 1.5 * speed;
+        }
+        
+        function updateKillerHealth() {
+            const value = parseInt(killerHealthSlider.value);
+            killerHealthValue.textContent = value;
+            if (!isRunning) {
+                mainKiller.maxHealth = value;
+                if (mainKiller.health > value) mainKiller.health = value;
+                updateStats();
+            }
+        }
+        
+        function updateTraitorChance() {
+            const value = parseInt(traitorChanceSlider.value);
+            traitorChanceValue.textContent = `${value}%`;
+            traitorChance = value / 100;
+        }
+        
+        function updateArmedAccuracy() {
+            const value = parseInt(armedAccuracySlider.value);
+            armedAccuracyValue.textContent = `${value}%`;
+            armedAccuracy = value / 100;
+            for (let survivor of survivors) {
+                if (survivor.armed) survivor.accuracy = armedAccuracy;
+            }
+        }
+        
+        function updateHidingSpots() {
+            const value = parseInt(hidingSpotsSlider.value);
+            hidingSpotsValue.textContent = value;
+            if (!isRunning) {
+                numHidingPlaces = value;
+                init();
+            }
+        }
+        
+        // Event listeners
+        startBtn.addEventListener('click', startSimulation);
+        pauseBtn.addEventListener('click', pauseSimulation);
+        resetBtn.addEventListener('click', resetSimulation);
+        stepBtn.addEventListener('click', stepSimulation);
+        speedSlider.addEventListener('input', updateSpeed);
+        killerHealthSlider.addEventListener('input', updateKillerHealth);
+        traitorChanceSlider.addEventListener('input', updateTraitorChance);
+        armedAccuracySlider.addEventListener('input', updateArmedAccuracy);
+        hidingSpotsSlider.addEventListener('input', updateHidingSpots);
+        
+        window.resetSimulation = resetSimulation;
+        
+        // Initialize
+        init();
+        pauseBtn.disabled = true;
+    </script>
 </body>
 </html>
